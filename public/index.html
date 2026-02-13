@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5e D&D Character Sheet</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Character Sheet</h1>
+      <p class="subtitle">Fifth Edition</p>
+      <div class="header-actions">
+        <button type="button" id="btn-new" class="btn btn-ghost">New Sheet</button>
+        <button type="button" id="btn-load" class="btn btn-ghost">Load</button>
+        <button type="button" id="btn-save" class="btn btn-primary">Save to Server</button>
+        <span id="save-status" class="save-status"></span>
+      </div>
+    </header>
+
+    <main class="sheet">
+      <!-- Character info -->
+      <section class="card card-info">
+        <h2>Character Information</h2>
+        <div class="info-grid">
+          <label>Character Name <input type="text" id="name" placeholder="—" /></label>
+          <label>Class <input type="text" id="class" placeholder="—" /></label>
+          <label>Level <input type="number" id="level" min="1" max="20" value="1" /></label>
+          <label>Background <input type="text" id="background" placeholder="—" /></label>
+          <label>Player Name <input type="text" id="playerName" placeholder="—" /></label>
+          <label>Race <input type="text" id="race" placeholder="—" /></label>
+          <label>Alignment <input type="text" id="alignment" placeholder="—" /></label>
+          <label>Experience Points <input type="number" id="experiencePoints" min="0" value="0" /></label>
+          <label>Inspiration <input type="number" id="inspiration" min="0" value="0" /></label>
+          <label>Proficiency Bonus <input type="number" id="proficiencyBonus" value="2" /></label>
+        </div>
+      </section>
+
+      <!-- Abilities -->
+      <section class="card card-abilities">
+        <h2>Abilities</h2>
+        <div class="abilities-grid">
+          <div class="ability-block">
+            <span class="ability-label">STR</span>
+            <input type="number" id="ability-str" min="1" max="30" value="10" class="ability-score" />
+            <span class="ability-mod" id="mod-str">+0</span>
+            <button type="button" class="roll-btn" data-ability="str" title="Roll d20 + modifier">d20</button>
+          </div>
+          <div class="ability-block">
+            <span class="ability-label">DEX</span>
+            <input type="number" id="ability-dex" min="1" max="30" value="10" class="ability-score" />
+            <span class="ability-mod" id="mod-dex">+0</span>
+            <button type="button" class="roll-btn" data-ability="dex">d20</button>
+          </div>
+          <div class="ability-block">
+            <span class="ability-label">CON</span>
+            <input type="number" id="ability-con" min="1" max="30" value="10" class="ability-score" />
+            <span class="ability-mod" id="mod-con">+0</span>
+            <button type="button" class="roll-btn" data-ability="con">d20</button>
+          </div>
+          <div class="ability-block">
+            <span class="ability-label">INT</span>
+            <input type="number" id="ability-int" min="1" max="30" value="10" class="ability-score" />
+            <span class="ability-mod" id="mod-int">+0</span>
+            <button type="button" class="roll-btn" data-ability="int">d20</button>
+          </div>
+          <div class="ability-block">
+            <span class="ability-label">WIS</span>
+            <input type="number" id="ability-wis" min="1" max="30" value="10" class="ability-score" />
+            <span class="ability-mod" id="mod-wis">+0</span>
+            <button type="button" class="roll-btn" data-ability="wis">d20</button>
+          </div>
+          <div class="ability-block">
+            <span class="ability-label">CHA</span>
+            <input type="number" id="ability-cha" min="1" max="30" value="10" class="ability-score" />
+            <span class="ability-mod" id="mod-cha">+0</span>
+            <button type="button" class="roll-btn" data-ability="cha">d20</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Saving throws -->
+      <section class="card card-saves">
+        <h2>Saving Throws</h2>
+        <div class="saves-list">
+          <label class="save-row"><input type="checkbox" id="save-str" /> STR <span id="save-mod-str">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-dex" /> DEX <span id="save-mod-dex">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-con" /> CON <span id="save-mod-con">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-int" /> INT <span id="save-mod-int">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-wis" /> WIS <span id="save-mod-wis">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-cha" /> CHA <span id="save-mod-cha">+0</span></label>
+        </div>
+      </section>
+
+      <!-- Skills -->
+      <section class="card card-skills">
+        <h2>Skills</h2>
+        <div class="skills-list">
+          <label class="skill-row"><input type="checkbox" id="skill-acrobatics" /> Acrobatics <span class="skill-ability">(DEX)</span> <span id="skill-mod-acrobatics">+0</span> <button type="button" class="skill-roll" data-skill="acrobatics" data-ability="dex">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-animalHandling" /> Animal Handling (WIS) <span id="skill-mod-animalHandling">+0</span> <button type="button" class="skill-roll" data-skill="animalHandling" data-ability="wis">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-arcana" /> Arcana (INT) <span id="skill-mod-arcana">+0</span> <button type="button" class="skill-roll" data-skill="arcana" data-ability="int">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-athletics" /> Athletics (STR) <span id="skill-mod-athletics">+0</span> <button type="button" class="skill-roll" data-skill="athletics" data-ability="str">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-deception" /> Deception (CHA) <span id="skill-mod-deception">+0</span> <button type="button" class="skill-roll" data-skill="deception" data-ability="cha">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-history" /> History (INT) <span id="skill-mod-history">+0</span> <button type="button" class="skill-roll" data-skill="history" data-ability="int">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-insight" /> Insight (WIS) <span id="skill-mod-insight">+0</span> <button type="button" class="skill-roll" data-skill="insight" data-ability="wis">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-intimidation" /> Intimidation (CHA) <span id="skill-mod-intimidation">+0</span> <button type="button" class="skill-roll" data-skill="intimidation" data-ability="cha">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-investigation" /> Investigation (INT) <span id="skill-mod-investigation">+0</span> <button type="button" class="skill-roll" data-skill="investigation" data-ability="int">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-medicine" /> Medicine (WIS) <span id="skill-mod-medicine">+0</span> <button type="button" class="skill-roll" data-skill="medicine" data-ability="wis">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-nature" /> Nature (INT) <span id="skill-mod-nature">+0</span> <button type="button" class="skill-roll" data-skill="nature" data-ability="int">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-perception" /> Perception (WIS) <span id="skill-mod-perception">+0</span> <button type="button" class="skill-roll" data-skill="perception" data-ability="wis">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-performance" /> Performance (CHA) <span id="skill-mod-performance">+0</span> <button type="button" class="skill-roll" data-skill="performance" data-ability="cha">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-persuasion" /> Persuasion (CHA) <span id="skill-mod-persuasion">+0</span> <button type="button" class="skill-roll" data-skill="persuasion" data-ability="cha">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-religion" /> Religion (INT) <span id="skill-mod-religion">+0</span> <button type="button" class="skill-roll" data-skill="religion" data-ability="int">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-sleightOfHand" /> Sleight of Hand (DEX) <span id="skill-mod-sleightOfHand">+0</span> <button type="button" class="skill-roll" data-skill="sleightOfHand" data-ability="dex">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-stealth" /> Stealth (DEX) <span id="skill-mod-stealth">+0</span> <button type="button" class="skill-roll" data-skill="stealth" data-ability="dex">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-survival" /> Survival (WIS) <span id="skill-mod-survival">+0</span> <button type="button" class="skill-roll" data-skill="survival" data-ability="wis">Roll</button></label>
+        </div>
+      </section>
+
+      <!-- Combat -->
+      <section class="card card-combat">
+        <h2>Combat</h2>
+        <div class="combat-grid">
+          <div class="combat-field">
+            <label>Armor Class</label>
+            <input type="number" id="armorClass" min="0" value="10" />
+          </div>
+          <div class="combat-field">
+            <label>Initiative</label>
+            <input type="number" id="initiative" value="0" />
+          </div>
+          <div class="combat-field">
+            <label>Speed</label>
+            <input type="number" id="speed" min="0" value="30" />
+          </div>
+          <div class="combat-field">
+            <label>Hit Point Maximum</label>
+            <input type="number" id="hitPointMax" min="1" value="10" />
+          </div>
+          <div class="combat-field">
+            <label>Current HP</label>
+            <input type="number" id="hitPointCurrent" value="10" />
+          </div>
+          <div class="combat-field">
+            <label>Temp HP</label>
+            <input type="number" id="hitPointTemp" min="0" value="0" />
+          </div>
+          <div class="combat-field">
+            <label>Hit Dice</label>
+            <input type="text" id="hitDice" placeholder="e.g. 1d8" value="1d8" />
+          </div>
+          <div class="combat-field">
+            <label>Total Hit Dice</label>
+            <input type="text" id="hitDiceTotal" placeholder="e.g. 1" value="1" />
+          </div>
+        </div>
+        <div class="death-saves">
+          <label>Death Saves</label>
+          <div class="death-row">
+            <span>Successes</span>
+            <input type="number" id="deathSuccesses" min="0" max="3" value="0" />
+            <span>Failures</span>
+            <input type="number" id="deathFailures" min="0" max="3" value="0" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Dice roller -->
+      <section class="card card-dice">
+        <h2>Dice Roller</h2>
+        <div class="dice-controls">
+          <div class="dice-row">
+            <input type="number" id="dice-count" min="1" max="20" value="1" />
+            <span>d</span>
+            <select id="dice-type">
+              <option value="4">4</option>
+              <option value="6">6</option>
+              <option value="8">8</option>
+              <option value="10">10</option>
+              <option value="12">12</option>
+              <option value="20" selected>20</option>
+              <option value="100">100</option>
+            </select>
+            <span>+</span>
+            <input type="number" id="dice-modifier" value="0" />
+            <button type="button" id="btn-roll-dice" class="btn btn-primary">Roll</button>
+          </div>
+          <div class="quick-dice">
+            <button type="button" class="quick-roll" data-dice="1d4">d4</button>
+            <button type="button" class="quick-roll" data-dice="1d6">d6</button>
+            <button type="button" class="quick-roll" data-dice="1d8">d8</button>
+            <button type="button" class="quick-roll" data-dice="1d10">d10</button>
+            <button type="button" class="quick-roll" data-dice="1d12">d12</button>
+            <button type="button" class="quick-roll" data-dice="1d20">d20</button>
+            <button type="button" class="quick-roll" data-dice="2d6">2d6</button>
+          </div>
+        </div>
+        <div id="dice-result" class="dice-result"></div>
+      </section>
+
+      <!-- Attacks, equipment, notes -->
+      <section class="card card-attacks">
+        <h2>Attacks & Spellcasting</h2>
+        <textarea id="attacks" rows="4" placeholder="Name | Atk Bonus | Damage/Type"></textarea>
+      </section>
+      <section class="card card-equipment">
+        <h2>Equipment</h2>
+        <textarea id="equipment" rows="6" placeholder="List equipment…"></textarea>
+      </section>
+      <section class="card card-features">
+        <h2>Features & Traits</h2>
+        <textarea id="featuresTraits" rows="4" placeholder="Features, traits, etc."></textarea>
+      </section>
+      <section class="card card-notes">
+        <h2>Notes</h2>
+        <textarea id="notes" rows="4" placeholder="Other notes…"></textarea>
+      </section>
+    </main>
+
+    <!-- Load modal -->
+    <div id="load-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Load Character</h3>
+        <ul id="character-list"></ul>
+        <button type="button" id="btn-close-load" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
