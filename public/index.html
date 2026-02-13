@@ -15,12 +15,88 @@
       <h1>Character Sheet</h1>
       <p class="subtitle">Fifth Edition</p>
       <div class="header-actions">
-        <button type="button" id="btn-new" class="btn btn-ghost">New Sheet</button>
+        <button type="button" id="btn-create" class="btn btn-primary">Create Character</button>
+        <button type="button" id="btn-new" class="btn btn-ghost">Blank Sheet</button>
         <button type="button" id="btn-load" class="btn btn-ghost">Load</button>
-        <button type="button" id="btn-save" class="btn btn-primary">Save to Server</button>
+        <button type="button" id="btn-save" class="btn btn-ghost">Save to Server</button>
         <span id="save-status" class="save-status"></span>
       </div>
     </header>
+
+    <!-- Character Builder Wizard (D&D Beyond style) -->
+    <div id="builder-modal" class="modal builder-modal hidden">
+      <div class="builder-content">
+        <div class="builder-header">
+          <h2>Character Builder</h2>
+          <div class="builder-steps">
+            <span class="step" data-step="1">1. Basics</span>
+            <span class="step" data-step="2">2. Class</span>
+            <span class="step" data-step="3">3. Race</span>
+            <span class="step" data-step="4">4. Abilities</span>
+            <span class="step" data-step="5">5. Background</span>
+            <span class="step" data-step="6">6. Review</span>
+          </div>
+        </div>
+        <div class="builder-body">
+          <div id="builder-step-1" class="builder-step">
+            <h3>Character Basics</h3>
+            <label>Character Name <input type="text" id="builder-name" placeholder="Enter name" /></label>
+            <label>Starting Level <input type="number" id="builder-level" min="1" max="20" value="1" /></label>
+          </div>
+          <div id="builder-step-2" class="builder-step hidden">
+            <h3>Choose Your Class</h3>
+            <p class="builder-hint">Your class defines your character's role and abilities.</p>
+            <div id="builder-class-grid" class="builder-option-grid"></div>
+          </div>
+          <div id="builder-step-3" class="builder-step hidden">
+            <h3>Choose Your Race</h3>
+            <p class="builder-hint">Your race provides special traits and abilities.</p>
+            <div id="builder-race-grid" class="builder-option-grid"></div>
+          </div>
+          <div id="builder-step-4" class="builder-step hidden">
+            <h3>Ability Scores</h3>
+            <p class="builder-hint">Choose how to determine your ability scores.</p>
+            <div class="ability-method-row">
+              <label class="method-option"><input type="radio" name="abilityMethod" value="standard" checked /> Standard Array (15, 14, 13, 12, 10, 8)</label>
+              <label class="method-option"><input type="radio" name="abilityMethod" value="pointbuy" /> Point Buy (27 points)</label>
+              <label class="method-option"><input type="radio" name="abilityMethod" value="roll" /> Roll 4d6 (drop lowest)</label>
+            </div>
+            <div id="ability-assign-area" class="ability-assign-area">
+              <p class="ability-instruction">Assign your scores. <span id="ability-suggest-hint"></span></p>
+              <div class="ability-assign-grid">
+                <label>STR <input type="number" id="builder-str" min="8" max="20" value="10" class="ability-assign-input" /></label>
+                <label>DEX <input type="number" id="builder-dex" min="8" max="20" value="10" class="ability-assign-input" /></label>
+                <label>CON <input type="number" id="builder-con" min="8" max="20" value="10" class="ability-assign-input" /></label>
+                <label>INT <input type="number" id="builder-int" min="8" max="20" value="10" class="ability-assign-input" /></label>
+                <label>WIS <input type="number" id="builder-wis" min="8" max="20" value="10" class="ability-assign-input" /></label>
+                <label>CHA <input type="number" id="builder-cha" min="8" max="20" value="10" class="ability-assign-input" /></label>
+              </div>
+              <div class="ability-method-actions">
+                <button type="button" id="btn-apply-standard" class="btn btn-ghost btn-sm">Use Standard Array</button>
+                <button type="button" id="btn-roll-abilities" class="btn btn-ghost btn-sm">Roll 4d6</button>
+              </div>
+              <p id="pointbuy-status" class="pointbuy-status hidden">Points remaining: <span id="pointbuy-remaining">27</span></p>
+            </div>
+          </div>
+          <div id="builder-step-5" class="builder-step hidden">
+            <h3>Choose Your Background</h3>
+            <p class="builder-hint">Your background represents your life before adventuring.</p>
+            <div id="builder-background-grid" class="builder-option-grid"></div>
+          </div>
+          <div id="builder-step-6" class="builder-step hidden">
+            <h3>Review & Complete</h3>
+            <div id="builder-summary" class="builder-summary"></div>
+            <p class="builder-hint">Click Complete to apply these choices to your character sheet.</p>
+          </div>
+        </div>
+        <div class="builder-footer">
+          <button type="button" id="btn-builder-back" class="btn btn-ghost">Back</button>
+          <button type="button" id="btn-builder-next" class="btn btn-primary">Next</button>
+          <button type="button" id="btn-builder-complete" class="btn btn-primary hidden">Complete</button>
+          <button type="button" id="btn-builder-cancel" class="btn btn-ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <main class="sheet">
       <!-- Character info -->
@@ -28,11 +104,20 @@
         <h2>Character Information</h2>
         <div class="info-grid">
           <label>Character Name <input type="text" id="name" placeholder="—" /></label>
-          <label>Class <input type="text" id="class" placeholder="—" /></label>
+          <label>Race
+            <select id="race"><option value="">—</option></select>
+            <input type="text" id="raceCustom" class="custom-input hidden" placeholder="Custom race" />
+          </label>
+          <label>Class
+            <select id="class"><option value="">—</option></select>
+            <input type="text" id="classCustom" class="custom-input hidden" placeholder="Custom class" />
+          </label>
           <label>Level <input type="number" id="level" min="1" max="20" value="1" /></label>
-          <label>Background <input type="text" id="background" placeholder="—" /></label>
+          <label>Background
+            <select id="background"><option value="">—</option></select>
+            <input type="text" id="backgroundCustom" class="custom-input hidden" placeholder="Custom background" />
+          </label>
           <label>Player Name <input type="text" id="playerName" placeholder="—" /></label>
-          <label>Race <input type="text" id="race" placeholder="—" /></label>
           <label>Alignment <input type="text" id="alignment" placeholder="—" /></label>
           <label>Experience Points <input type="number" id="experiencePoints" min="0" value="0" /></label>
           <label>Inspiration <input type="number" id="inspiration" min="0" value="0" /></label>
@@ -213,7 +298,9 @@
       </section>
       <section class="card card-features">
         <h2>Features & Traits</h2>
-        <textarea id="featuresTraits" rows="4" placeholder="Features, traits, etc."></textarea>
+        <div id="featuresAuto" class="features-auto"></div>
+        <label class="features-custom-label">Additional features & traits</label>
+        <textarea id="customFeatures" rows="4" placeholder="Other features, traits, or notes…"></textarea>
       </section>
       <section class="card card-notes">
         <h2>Notes</h2>
@@ -231,6 +318,8 @@
     </div>
   </div>
 
+  <script src="data-options.js"></script>
+  <script src="builder-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -61,6 +61,7 @@ function getDefaultCharacter() {
     attacks: [],
     equipment: '',
     featuresTraits: '',
+    customFeatures: '',
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
