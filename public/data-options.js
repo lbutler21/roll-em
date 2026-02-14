@@ -38,11 +38,42 @@ const RACE_OPTIONS = {
     name: 'Tiefling',
     features: 'Darkvision\nHellish Resistance\nInfernal Legacy'
   },
+  tabaxi: {
+    name: 'Tabaxi',
+    features: 'Darkvision\nFeline Agility\nCat\'s Claws'
+  },
   other: { name: 'Other', features: '' }
 };
 
 const CLASS_OPTIONS = {
   '': { name: '—', features: '', featuresByLevel: {}, hitDice: '1d8' },
+  artificer: {
+    name: 'Artificer',
+    features: 'Spellcasting\nMagical Tinkering',
+    hitDice: '1d8',
+    featuresByLevel: {
+      1: 'Spellcasting\nMagical Tinkering',
+      2: 'Infuse Item',
+      3: 'Artificer Specialist',
+      4: 'Ability Score Improvement',
+      5: '—',
+      6: 'Specialist feature',
+      7: 'Flash of Genius',
+      8: 'Ability Score Improvement',
+      9: '—',
+      10: 'Specialist feature',
+      11: 'Spell-Storing Item',
+      12: 'Ability Score Improvement',
+      13: '—',
+      14: 'Specialist feature',
+      15: '—',
+      16: 'Ability Score Improvement',
+      17: '—',
+      18: 'Specialist feature',
+      19: 'Ability Score Improvement',
+      20: 'Soul of Artifice'
+    }
+  },
   barbarian: {
     name: 'Barbarian',
     features: 'Rage\nUnarmored Defense',

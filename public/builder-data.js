@@ -6,6 +6,7 @@ const POINT_BUY_TOTAL = 27;
 
 // Suggested ability placement by class (str, dex, con, int, wis, cha)
 const STANDARD_ARRAY_BY_CLASS = {
+  artificer: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 },
   barbarian: { str: 15, dex: 13, con: 14, int: 10, wis: 12, cha: 8 },
   bard: { str: 8, dex: 14, con: 12, int: 13, wis: 10, cha: 15 },
   cleric: { str: 14, dex: 8, con: 13, int: 10, wis: 15, cha: 12 },
@@ -22,6 +23,11 @@ const STANDARD_ARRAY_BY_CLASS = {
 
 // Class proficiencies: saving throws (2), skills (choose N from list)
 const CLASS_PROFICIENCIES = {
+  artificer: {
+    savingThrows: ['con', 'int'],
+    skillChoices: 2,
+    skills: ['arcana', 'history', 'investigation', 'medicine', 'nature', 'perception', 'sleightOfHand']
+  },
   barbarian: {
     savingThrows: ['str', 'con'],
     skillChoices: 2,
@@ -155,6 +161,7 @@ const BACKGROUND_BUILDER = {
 
 // Starting equipment by class
 const CLASS_STARTING_EQUIPMENT = {
+  artificer: '(a) two handaxes or (b) any simple weapon\n(a) light crossbow and 20 bolts or (b) any simple weapon\n(a) dungeoneer\'s pack or (b) explorer\'s pack\nLeather armor, thieves\' tools, two artisan\'s tools of your choice',
   barbarian: '(a) greataxe or (b) any martial melee weapon\n4 javelins or any simple weapon',
   bard: '(a) rapier or (b) longsword or (c) any simple weapon\n(a) diplomat\'s pack or (b) entertainer\'s pack\n(a) lute or (b) any musical instrument\nLeather armor, dagger',
   cleric: '(a) mace or (b) warhammer\n(a) scale mail or (b) leather or (c) chain mail\n(a) light crossbow + 20 bolts or (b) any simple weapon\n(a) priest\'s pack or (b) explorer\'s pack\nShield, holy symbol',

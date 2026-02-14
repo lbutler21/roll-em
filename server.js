@@ -62,6 +62,7 @@ function getDefaultCharacter() {
     equipment: '',
     featuresTraits: '',
     customFeatures: '',
+    featureChoices: {},
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()

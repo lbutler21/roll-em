@@ -9,6 +9,58 @@ function getDisplayName(selectId, customId) {
   return data ? data.name : '';
 }
 
+function featureNameToKey(name) {
+  const cleaned = (name || '').replace(/\s*\([^)]*\)/g, '').trim();
+  return cleaned.split(/\s+/).map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+}
+
+function wrapFeatureWithTooltip(name) {
+  const key = featureNameToKey(name);
+  const desc = FEATURE_DESCRIPTIONS && FEATURE_DESCRIPTIONS[key];
+  if (desc) {
+    return '<span class="feature-tooltip-trigger" data-feature="' + escapeHtml(key) + '" title="">' + escapeHtml(name) + '</span>';
+  }
+  return escapeHtml(name);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function getPendingFeatureChoices() {
+  const raceId = getValue('race') || '';
+  const classId = getValue('class') || '';
+  const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
+  const pending = [];
+  if (!FEATURE_CHOICES) return pending;
+  Object.keys(FEATURE_CHOICES).forEach(key => {
+    const cfg = FEATURE_CHOICES[key];
+    if (charLevel < (cfg.level || 1)) return;
+    if (cfg.source === 'race' && cfg.sourceId === raceId) pending.push({ key, ...cfg });
+    if (cfg.source === 'class') {
+      const ids = cfg.sourceIds || (cfg.sourceId ? [cfg.sourceId] : []);
+      if (ids.includes(classId)) pending.push({ key, ...cfg });
+    }
+  });
+  return pending;
+}
+
+function getResolvedFeatureText(featureName, choiceKey) {
+  const choice = state.featureChoices[choiceKey];
+  if (!choice || !FEATURE_CHOICES || !FEATURE_CHOICES[choiceKey]) return featureName;
+  const cfg = FEATURE_CHOICES[choiceKey];
+  const opt = (cfg.options || []).find(o => o.id === choice);
+  if (!opt) return featureName;
+  if (choiceKey === 'draconicAncestry') {
+    if (featureName === 'Draconic Ancestry') return 'Draconic Ancestry (' + opt.name + ')';
+    if (featureName === 'Breath Weapon') return 'Breath Weapon (' + (opt.damageType || '') + ', ' + (opt.breathWeapon || '') + ')';
+    if (featureName === 'Damage Resistance') return 'Damage Resistance (' + (opt.resistance || opt.damageType || '') + ')';
+  }
+  return featureName + ' (' + opt.name + ')';
+}
+
 function updateAutoFeatures() {
   const raceId = getValue('race') || '';
   const classId = getValue('class') || '';
@@ -16,22 +68,107 @@ function updateAutoFeatures() {
   const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
   const parts = [];
   const raceData = RACE_OPTIONS[raceId];
-  if (raceData && raceData.features) parts.push('[Race: ' + raceData.name + ']\n' + raceData.features);
+  if (raceData && raceData.features) {
+    const feats = raceData.features.split(/\n/).filter(Boolean).map(f => {
+      const name = f.trim();
+      const resolved = getResolvedFeatureText(name, 'draconicAncestry');
+      return wrapFeatureWithTooltip(resolved);
+    }).join(', ');
+    parts.push('[Race: ' + raceData.name + ']\n' + feats);
+  }
   const classData = CLASS_OPTIONS[classId];
+  const choiceKeyByFeature = {};
+  if (FEATURE_CHOICES) {
+    Object.keys(FEATURE_CHOICES).forEach(key => {
+      const cfg = FEATURE_CHOICES[key];
+      if (cfg.source === 'race') return;
+      const ids = cfg.sourceIds || (cfg.sourceId ? [cfg.sourceId] : []);
+      if (ids.includes(classId) && charLevel >= (cfg.level || 1)) choiceKeyByFeature[cfg.featureLabel] = key;
+    });
+  }
   if (classData && classData.featuresByLevel && Object.keys(classData.featuresByLevel).length > 0) {
-    const levelParts = [];
+    const levelLines = [];
     for (let lvl = 1; lvl <= charLevel; lvl++) {
       const txt = classData.featuresByLevel[lvl];
-      if (txt && txt !== '—') levelParts.push('Level ' + lvl + ': ' + txt.replace(/\n/g, ', '));
+      if (txt && txt !== '—') {
+        const featNames = txt.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+        const wrapped = featNames.map(name => {
+          const choiceKey = Object.keys(choiceKeyByFeature).find(l => name.indexOf(l) === 0 || l.indexOf(name) >= 0);
+          const resolved = choiceKey ? getResolvedFeatureText(name, choiceKeyByFeature[choiceKey]) : name;
+          return wrapFeatureWithTooltip(resolved);
+        }).join(', ');
+        levelLines.push('Level ' + lvl + ': ' + wrapped);
+      }
     }
-    if (levelParts.length) parts.push('[Class: ' + classData.name + ']\n' + levelParts.join('\n'));
+    if (levelLines.length) parts.push('[Class: ' + classData.name + ']\n' + levelLines.join('\n'));
   } else if (classData && classData.features) {
-    parts.push('[Class: ' + classData.name + ']\n' + classData.features);
+    const feats = classData.features.split(/\n/).filter(Boolean).map(f => {
+      const name = f.trim();
+      const choiceKey = choiceKeyByFeature[name] || Object.keys(choiceKeyByFeature).find(l => name.indexOf(l) === 0);
+      const resolved = choiceKey ? getResolvedFeatureText(name, choiceKey) : name;
+      return wrapFeatureWithTooltip(resolved);
+    }).join(', ');
+    parts.push('[Class: ' + classData.name + ']\n' + feats);
   }
   const bgData = BACKGROUND_OPTIONS[bgId];
-  if (bgData && bgData.features) parts.push('[Background: ' + bgData.name + ']\n' + bgData.features);
+  if (bgData && bgData.features) {
+    const feats = bgData.features.split(/\n/).filter(Boolean).map(f => wrapFeatureWithTooltip(f.trim())).join(', ');
+    parts.push('[Background: ' + bgData.name + ']\n' + feats);
+  }
   const el = document.getElementById('featuresAuto');
-  if (el) el.textContent = parts.length ? parts.join('\n\n') : '';
+  if (el) el.innerHTML = parts.length ? parts.join('\n\n') : '';
+  bindFeatureTooltips();
+}
+
+function bindFeatureTooltips() {
+  document.querySelectorAll('.feature-tooltip-trigger').forEach(el => {
+    el.removeEventListener('mouseenter', showFeatureTooltip);
+    el.removeEventListener('mouseleave', hideTooltip);
+    el.addEventListener('mouseenter', showFeatureTooltip);
+    el.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+function showFeatureTooltip(e) {
+  const key = e.target.dataset.feature;
+  const desc = FEATURE_DESCRIPTIONS && FEATURE_DESCRIPTIONS[key];
+  if (desc) showTooltip(e.target, desc);
+}
+
+function showSkillTooltip(e) {
+  const key = e.target.dataset.skill;
+  const desc = SKILL_DESCRIPTIONS && SKILL_DESCRIPTIONS[key];
+  if (desc) showTooltip(e.target, desc);
+}
+
+function showTooltip(anchor, text) {
+  let tip = document.getElementById('dnd-tooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'dnd-tooltip';
+    tip.className = 'dnd-tooltip';
+    document.body.appendChild(tip);
+  }
+  tip.textContent = text;
+  tip.classList.add('visible');
+  positionTooltip(tip, anchor);
+}
+
+function positionTooltip(tip, anchor) {
+  const rect = anchor.getBoundingClientRect();
+  const tipRect = tip.getBoundingClientRect();
+  let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+  let top = rect.top - tipRect.height - 8;
+  if (top < 8) top = rect.bottom + 8;
+  if (left < 8) left = 8;
+  if (left + tipRect.width > window.innerWidth - 8) left = window.innerWidth - tipRect.width - 8;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+
+function hideTooltip() {
+  const tip = document.getElementById('dnd-tooltip');
+  if (tip) tip.classList.remove('visible');
 }
 
 function toggleCustomInputs() {
@@ -64,7 +201,8 @@ const SKILL_ABILITY_MAP = {
 
 const state = {
   characterId: null,
-  character: null
+  character: null,
+  featureChoices: {}
 };
 
 function getCharacterFromForm() {
@@ -127,6 +265,7 @@ function getCharacterFromForm() {
     equipment: getValue('equipment'),
     customFeatures: getValue('customFeatures'),
     featuresTraits: getValue('customFeatures'),
+    featureChoices: { ...state.featureChoices },
     notes: getValue('notes')
   };
 }
@@ -187,6 +326,7 @@ function loadCharacterIntoForm(data) {
   setValue('proficiencyBonus', data.proficiencyBonus);
   setRaceClassBackgroundFromData(data);
   setValue('customFeatures', data.customFeatures != null ? data.customFeatures : (data.featuresTraits || ''));
+  state.featureChoices = data.featureChoices && typeof data.featureChoices === 'object' ? { ...data.featureChoices } : {};
 
   const abilities = data.abilities || {};
   ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => {
@@ -353,6 +493,7 @@ document.getElementById('btn-new')?.addEventListener('click', () => {
     deathSaves: { successes: 0, failures: 0 }
   });
   setValue('customFeatures', '');
+  state.featureChoices = {};
   document.getElementById('save-status').textContent = '';
   document.getElementById('save-status').className = 'save-status';
 });
@@ -617,6 +758,11 @@ document.getElementById('btn-roll-abilities')?.addEventListener('click', () => {
   document.getElementById('builder-' + ab)?.addEventListener('input', () => updatePointBuyDisplay());
 });
 
+document.querySelectorAll('.skill-tooltip-trigger').forEach(el => {
+  el.addEventListener('mouseenter', showSkillTooltip);
+  el.addEventListener('mouseleave', hideTooltip);
+});
+
 async function saveCharacter() {
   const payload = getCharacterFromForm();
   const statusEl = document.getElementById('save-status');
@@ -693,6 +839,51 @@ document.getElementById('btn-close-load')?.addEventListener('click', () => {
 
 document.getElementById('load-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'load-modal') e.target.classList.add('hidden');
+});
+
+document.getElementById('btn-feature-choices')?.addEventListener('click', () => {
+  const pending = getPendingFeatureChoices();
+  const listEl = document.getElementById('feature-choices-list');
+  listEl.innerHTML = '';
+  if (pending.length === 0) {
+    listEl.innerHTML = '<p class="feature-choices-empty">No feature choices required for your current race, class, and level.</p>';
+  } else {
+    pending.forEach(({ key, prompt, featureLabel, options }) => {
+      const block = document.createElement('div');
+      block.className = 'feature-choice-block';
+      const current = state.featureChoices[key];
+      const sel = document.createElement('select');
+      sel.dataset.choiceKey = key;
+      const opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = '— Choose —';
+      sel.appendChild(opt0);
+      (options || []).forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt.id;
+        o.textContent = opt.damageType ? opt.name + ' (' + opt.damageType + ')' : (opt.name + (opt.desc ? ' — ' + opt.desc : ''));
+        if (opt.id === current) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', () => {
+        state.featureChoices[key] = sel.value || undefined;
+        if (!sel.value) delete state.featureChoices[key];
+        updateAutoFeatures();
+      });
+      block.innerHTML = '<label class="feature-choice-label">' + escapeHtml(featureLabel || prompt) + '</label>';
+      block.appendChild(sel);
+      listEl.appendChild(block);
+    });
+  }
+  document.getElementById('feature-choices-modal').classList.remove('hidden');
+});
+
+document.getElementById('btn-close-feature-choices')?.addEventListener('click', () => {
+  document.getElementById('feature-choices-modal').classList.add('hidden');
+});
+
+document.getElementById('feature-choices-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'feature-choices-modal') e.target.classList.add('hidden');
 });
 
 function populateSelects() {

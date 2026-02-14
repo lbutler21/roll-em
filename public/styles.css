@@ -193,6 +193,47 @@ body {
   margin-bottom: 0.35rem;
 }
 
+.feature-choices-btn {
+  margin-bottom: 0.75rem;
+}
+
+.feature-choices-modal-content {
+  max-width: 480px;
+}
+
+.feature-choices-hint {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  margin: 0 0 1rem;
+}
+
+.feature-choices-empty {
+  font-size: 0.95rem;
+  color: var(--ink-muted);
+  margin: 0 0 1rem;
+}
+
+.feature-choice-block {
+  margin-bottom: 1rem;
+}
+
+.feature-choice-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.feature-choice-block select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
 /* Abilities */
 .abilities-grid {
   display: grid;
@@ -630,4 +671,40 @@ textarea {
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+/* Feature & skill tooltips */
+.feature-tooltip-trigger,
+.skill-tooltip-trigger {
+  cursor: help;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.feature-tooltip-trigger:hover,
+.skill-tooltip-trigger:hover {
+  color: var(--accent);
+}
+
+.dnd-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 320px;
+  padding: 0.75rem 1rem;
+  background: var(--ink);
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.dnd-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
 }
