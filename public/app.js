@@ -10,15 +10,15 @@ function getDisplayName(selectId, customId) {
 }
 
 function featureNameToKey(name) {
-  const cleaned = (name || '').replace(/\s*\([^)]*\)/g, '').trim();
-  return cleaned.split(/\s+/).map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+  const cleaned = (name || '').replace(/\s*\([^)]*\)/g, '').trim().replace(/'/g, '').replace(/-/g, ' ');
+  return cleaned.split(/\s+/).filter(Boolean).map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
 }
 
-function wrapFeatureWithTooltip(name) {
-  const key = featureNameToKey(name);
-  const desc = FEATURE_DESCRIPTIONS && FEATURE_DESCRIPTIONS[key];
+function wrapFeatureWithTooltip(name, customDesc) {
+  const desc = customDesc || (FEATURE_DESCRIPTIONS && FEATURE_DESCRIPTIONS[featureNameToKey(name)]);
   if (desc) {
-    return '<span class="feature-tooltip-trigger" data-feature="' + escapeHtml(key) + '" title="">' + escapeHtml(name) + '</span>';
+    const key = customDesc ? 'choice-' + featureNameToKey(name).replace(/[^a-z0-9]/gi, '') : featureNameToKey(name);
+    return '<span class="feature-tooltip-trigger" data-feature="' + escapeHtml(key) + '" data-desc="' + escapeHtml(desc) + '">' + escapeHtml(name) + '</span>';
   }
   return escapeHtml(name);
 }
@@ -49,16 +49,27 @@ function getPendingFeatureChoices() {
 
 function getResolvedFeatureText(featureName, choiceKey) {
   const choice = state.featureChoices[choiceKey];
-  if (!choice || !FEATURE_CHOICES || !FEATURE_CHOICES[choiceKey]) return featureName;
+  if (!choice || !FEATURE_CHOICES || !FEATURE_CHOICES[choiceKey]) return { text: featureName, desc: null };
   const cfg = FEATURE_CHOICES[choiceKey];
   const opt = (cfg.options || []).find(o => o.id === choice);
-  if (!opt) return featureName;
+  if (!opt) return { text: featureName, desc: null };
+  let text, desc = opt.desc || null;
   if (choiceKey === 'draconicAncestry') {
-    if (featureName === 'Draconic Ancestry') return 'Draconic Ancestry (' + opt.name + ')';
-    if (featureName === 'Breath Weapon') return 'Breath Weapon (' + (opt.damageType || '') + ', ' + (opt.breathWeapon || '') + ')';
-    if (featureName === 'Damage Resistance') return 'Damage Resistance (' + (opt.resistance || opt.damageType || '') + ')';
+    if (featureName === 'Draconic Ancestry') {
+      text = 'Draconic Ancestry (' + opt.name + ')';
+      desc = 'You have the heritage of a ' + opt.name.toLowerCase() + '. Your breath weapon deals ' + (opt.damageType || '').toLowerCase() + ' damage and you have resistance to ' + (opt.resistance || opt.damageType || '').toLowerCase() + ' damage.';
+    } else if (featureName === 'Breath Weapon') {
+      text = 'Breath Weapon (' + (opt.damageType || '') + ', ' + (opt.breathWeapon || '') + ')';
+      desc = 'You can use your action to exhale destructive energy in a ' + (opt.breathWeapon || '') + '. Creatures in the area must make the appropriate saving throw or take 2d6 ' + (opt.damageType || '').toLowerCase() + ' damage (or half on success). You can\'t use this again until you finish a short or long rest.';
+    } else if (featureName === 'Damage Resistance') {
+      text = 'Damage Resistance (' + (opt.resistance || opt.damageType || '') + ')';
+      desc = 'You have resistance to ' + (opt.resistance || opt.damageType || '').toLowerCase() + ' damage.';
+    } else return { text: featureName, desc: null };
+  } else {
+    text = featureName + ' (' + opt.name + ')';
+    desc = opt.desc || desc;
   }
-  return featureName + ' (' + opt.name + ')';
+  return { text, desc };
 }
 
 function updateAutoFeatures() {
@@ -72,7 +83,7 @@ function updateAutoFeatures() {
     const feats = raceData.features.split(/\n/).filter(Boolean).map(f => {
       const name = f.trim();
       const resolved = getResolvedFeatureText(name, 'draconicAncestry');
-      return wrapFeatureWithTooltip(resolved);
+      return wrapFeatureWithTooltip(resolved.text, resolved.desc);
     }).join(', ');
     parts.push('[Race: ' + raceData.name + ']\n' + feats);
   }
@@ -93,9 +104,19 @@ function updateAutoFeatures() {
       if (txt && txt !== '—') {
         const featNames = txt.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
         const wrapped = featNames.map(name => {
+          // Replace subclass placeholders with specific feature names
+          const subclassChoiceKey = typeof getSubclassChoiceKey === 'function' ? getSubclassChoiceKey(name, classId) : null;
+          if (subclassChoiceKey && typeof SUBCLASS_FEATURES !== 'undefined') {
+            const chosen = state.featureChoices[subclassChoiceKey];
+            const spec = chosen && SUBCLASS_FEATURES[subclassChoiceKey] && SUBCLASS_FEATURES[subclassChoiceKey][chosen] && SUBCLASS_FEATURES[subclassChoiceKey][chosen][lvl];
+            if (spec) {
+              const names = spec.split(/\n/).map(s => s.trim()).filter(Boolean);
+              return names.map(n => wrapFeatureWithTooltip(n, null)).join(', ');
+            }
+          }
           const choiceKey = Object.keys(choiceKeyByFeature).find(l => name.indexOf(l) === 0 || l.indexOf(name) >= 0);
-          const resolved = choiceKey ? getResolvedFeatureText(name, choiceKeyByFeature[choiceKey]) : name;
-          return wrapFeatureWithTooltip(resolved);
+          const resolved = choiceKey ? getResolvedFeatureText(name, choiceKeyByFeature[choiceKey]) : { text: name, desc: null };
+          return wrapFeatureWithTooltip(resolved.text, resolved.desc);
         }).join(', ');
         levelLines.push('Level ' + lvl + ': ' + wrapped);
       }
@@ -105,8 +126,8 @@ function updateAutoFeatures() {
     const feats = classData.features.split(/\n/).filter(Boolean).map(f => {
       const name = f.trim();
       const choiceKey = choiceKeyByFeature[name] || Object.keys(choiceKeyByFeature).find(l => name.indexOf(l) === 0);
-      const resolved = choiceKey ? getResolvedFeatureText(name, choiceKey) : name;
-      return wrapFeatureWithTooltip(resolved);
+      const resolved = choiceKey ? getResolvedFeatureText(name, choiceKey) : { text: name, desc: null };
+      return wrapFeatureWithTooltip(resolved.text, resolved.desc);
     }).join(', ');
     parts.push('[Class: ' + classData.name + ']\n' + feats);
   }
@@ -130,8 +151,7 @@ function bindFeatureTooltips() {
 }
 
 function showFeatureTooltip(e) {
-  const key = e.target.dataset.feature;
-  const desc = FEATURE_DESCRIPTIONS && FEATURE_DESCRIPTIONS[key];
+  const desc = e.target.dataset.desc || (FEATURE_DESCRIPTIONS && FEATURE_DESCRIPTIONS[e.target.dataset.feature]);
   if (desc) showTooltip(e.target, desc);
 }
 
@@ -266,7 +286,26 @@ function getCharacterFromForm() {
     customFeatures: getValue('customFeatures'),
     featuresTraits: getValue('customFeatures'),
     featureChoices: { ...state.featureChoices },
-    notes: getValue('notes')
+    notesOrganizations: getValue('notesOrganizations'),
+    notesAllies: getValue('notesAllies'),
+    notesEnemies: getValue('notesEnemies'),
+    notesBackstory: getValue('notesBackstory'),
+    notesOther: getValue('notesOther'),
+    bgGender: getValue('bgGender'),
+    bgEyes: getValue('bgEyes'),
+    bgSize: getValue('bgSize'),
+    bgHeight: getValue('bgHeight'),
+    bgFaith: getValue('bgFaith'),
+    bgHair: getValue('bgHair'),
+    bgSkin: getValue('bgSkin'),
+    bgAge: getValue('bgAge'),
+    bgWeight: getValue('bgWeight'),
+    bgPersonalityTraits: getValue('bgPersonalityTraits'),
+    bgIdeals: getValue('bgIdeals'),
+    bgBonds: getValue('bgBonds'),
+    bgFlaws: getValue('bgFlaws'),
+    toolProficiencies: getValue('toolProficiencies'),
+    languages: getValue('languages')
   };
 }
 
@@ -355,13 +394,45 @@ function loadCharacterIntoForm(data) {
   setValue('deathFailures', data.deathSaves?.failures ?? 0);
   setValue('attacks', data.attacks ?? '');
   setValue('equipment', data.equipment ?? '');
-  setValue('notes', data.notes ?? '');
+  setValue('notesOrganizations', data.notesOrganizations ?? '');
+  setValue('notesAllies', data.notesAllies ?? '');
+  setValue('notesEnemies', data.notesEnemies ?? '');
+  setValue('notesBackstory', data.notesBackstory ?? '');
+  setValue('notesOther', data.notesOther ?? data.notes ?? '');
+  setValue('bgGender', data.bgGender ?? '');
+  setValue('bgEyes', data.bgEyes ?? '');
+  setValue('bgSize', data.bgSize ?? '');
+  setValue('bgHeight', data.bgHeight ?? '');
+  setValue('bgFaith', data.bgFaith ?? '');
+  setValue('bgHair', data.bgHair ?? '');
+  setValue('bgSkin', data.bgSkin ?? '');
+  setValue('bgAge', data.bgAge ?? '');
+  setValue('bgWeight', data.bgWeight ?? '');
+  setValue('bgPersonalityTraits', data.bgPersonalityTraits ?? '');
+  setValue('bgIdeals', data.bgIdeals ?? '');
+  setValue('bgBonds', data.bgBonds ?? '');
+  setValue('bgFlaws', data.bgFlaws ?? '');
+  setValue('toolProficiencies', data.toolProficiencies ?? '');
+  setValue('languages', data.languages ?? '');
   toggleCustomInputs();
   updateAutoFeatures();
 
   state.characterId = data.id || null;
   state.character = data;
   updateModifiers();
+  updateBackgroundDisplay();
+}
+
+function updateBackgroundDisplay() {
+  const el = document.getElementById('backgroundDisplay');
+  if (!el) return;
+  const bgId = getValue('background') || '';
+  const bgCustom = getValue('backgroundCustom') || '';
+  const bgData = bgId && BACKGROUND_OPTIONS[bgId] ? BACKGROUND_OPTIONS[bgId] : null;
+  const name = bgData ? bgData.name : (bgCustom || '—');
+  const features = bgData && bgData.features ? bgData.features : '';
+  el.innerHTML = '<div class="bg-name">' + escapeHtml(name) + '</div>' +
+    (features ? '<div class="bg-features">' + escapeHtml(features) + '</div>' : '');
 }
 
 function updateModifiers() {
@@ -387,6 +458,45 @@ function updateModifiers() {
     const el = document.getElementById('skill-mod-' + skill);
     if (el) el.textContent = formatModifier(total);
   });
+
+  const profEl = document.getElementById('prof-display');
+  if (profEl) profEl.textContent = formatModifier(prof);
+
+  const wisMod = abilityModifier(parseInt(getValue('ability-wis'), 10) || 10);
+  const intMod = abilityModifier(parseInt(getValue('ability-int'), 10) || 10);
+  const perProf = document.getElementById('skill-perception')?.checked;
+  const invProf = document.getElementById('skill-investigation')?.checked;
+  const insProf = document.getElementById('skill-insight')?.checked;
+  const pp = document.getElementById('passive-perception');
+  const pi = document.getElementById('passive-investigation');
+  const pins = document.getElementById('passive-insight');
+  if (pp) pp.textContent = 10 + wisMod + (perProf ? prof : 0);
+  if (pi) pi.textContent = 10 + intMod + (invProf ? prof : 0);
+  if (pins) pins.textContent = 10 + wisMod + (insProf ? prof : 0);
+
+  updateBanner();
+}
+
+function updateBanner() {
+  const name = getValue('name') || 'Character Sheet';
+  const race = getDisplayName('race', 'raceCustom') || '';
+  const cls = getDisplayName('class', 'classCustom') || '';
+  const lvl = parseInt(getValue('level'), 10) || 1;
+  const xp = parseInt(getValue('experiencePoints'), 10) || 0;
+  const elName = document.getElementById('banner-name');
+  const elSub = document.getElementById('banner-subtitle');
+  const elLvl = document.getElementById('banner-level');
+  const elBar = document.getElementById('xp-bar');
+  if (elName) elName.textContent = name.trim() || 'Character Sheet';
+  if (elSub) elSub.textContent = [race, cls, lvl].filter(Boolean).join(' ') || '—';
+  if (elLvl) elLvl.textContent = lvl;
+  if (elBar) {
+    const xpThresholds = [0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
+    const curr = xpThresholds[Math.min(lvl - 1, 19)] ?? 0;
+    const next = lvl < 20 ? (xpThresholds[lvl] ?? 355000) : curr;
+    const pct = next > curr ? Math.min(100, ((xp - curr) / (next - curr)) * 100) : 100;
+    elBar.style.width = Math.max(0, pct) + '%';
+  }
 }
 
 function roll(diceNotation) {
@@ -475,9 +585,48 @@ document.querySelectorAll('.quick-roll').forEach(btn => {
   });
 });
 
+document.getElementById('btn-manage')?.addEventListener('click', () => {
+  document.getElementById('manage-modal').classList.remove('hidden');
+});
+document.getElementById('btn-close-manage')?.addEventListener('click', () => {
+  document.getElementById('manage-modal').classList.add('hidden');
+});
+document.getElementById('manage-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'manage-modal') e.target.classList.add('hidden');
+});
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabId = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+    btn.classList.add('active');
+    const pane = document.getElementById('tab-' + tabId);
+    if (pane) { pane.classList.remove('hidden'); }
+    if (tabId === 'background') updateBackgroundDisplay();
+  });
+});
+document.querySelectorAll('.bg-sub-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const filter = btn.dataset.bgFilter;
+    document.querySelectorAll('.bg-sub-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.bg-section').forEach(section => {
+      const sectionName = section.dataset.bgSection;
+      const show = filter === 'all' || sectionName === filter;
+      section.classList.toggle('hidden-by-filter', !show);
+    });
+  });
+});
+['name', 'level', 'race', 'class', 'experiencePoints'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateBanner);
+  if (el) el.addEventListener('change', updateBanner);
+});
+
 document.getElementById('btn-new')?.addEventListener('click', () => {
   state.characterId = null;
   loadCharacterIntoForm({
+    name: '',
     level: 1,
     proficiencyBonus: 2,
     armorClass: 10,
@@ -905,6 +1054,7 @@ function populateSelects() {
 
 populateSelects();
 toggleCustomInputs();
+updateBanner();
 
 ['race', 'class', 'background'].forEach(field => {
   const sel = document.getElementById(field);
@@ -912,6 +1062,8 @@ toggleCustomInputs();
   sel.addEventListener('change', () => {
     toggleCustomInputs();
     updateAutoFeatures();
+    updateBanner();
+    if (field === 'background') updateBackgroundDisplay();
     if (field === 'class') {
       const classId = getValue('class') || '';
       const data = CLASS_OPTIONS[classId];

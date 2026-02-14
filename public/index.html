@@ -7,18 +7,35 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app">
-    <header class="header">
-      <h1>Character Sheet</h1>
-      <p class="subtitle">Fifth Edition</p>
-      <div class="header-actions">
-        <button type="button" id="btn-create" class="btn btn-primary">Create Character</button>
-        <button type="button" id="btn-new" class="btn btn-ghost">Blank Sheet</button>
+    <!-- Character banner -->
+    <header class="char-banner">
+      <div class="char-banner-main">
+        <div class="char-banner-left">
+          <button type="button" id="btn-create" class="btn btn-primary" title="Create new character">Create Character</button>
+          <div class="char-identity">
+            <h1 id="banner-name" class="char-name">Character Sheet</h1>
+            <p id="banner-subtitle" class="char-subtitle">—</p>
+          </div>
+        </div>
+        <div class="char-banner-right">
+          <button type="button" id="btn-manage" class="btn btn-banner">Manage</button>
+        </div>
+      </div>
+      <div class="char-banner-bar">
+        <span class="xp-label">LVL <span id="banner-level">1</span></span>
+        <div class="xp-progress">
+          <div id="xp-bar" class="xp-bar" style="width: 0%"></div>
+        </div>
+        <span class="xp-next">LVL 2</span>
+      </div>
+      <div class="char-banner-actions">
+        <button type="button" id="btn-new" class="btn btn-ghost">Blank</button>
         <button type="button" id="btn-load" class="btn btn-ghost">Load</button>
-        <button type="button" id="btn-save" class="btn btn-ghost">Save to Server</button>
+        <button type="button" id="btn-save" class="btn btn-ghost">Save</button>
         <span id="save-status" class="save-status"></span>
       </div>
     </header>
@@ -99,32 +116,8 @@
     </div>
 
     <main class="sheet">
-      <!-- Character info -->
-      <section class="card card-info">
-        <h2>Character Information</h2>
-        <div class="info-grid">
-          <label>Character Name <input type="text" id="name" placeholder="—" /></label>
-          <label>Race
-            <select id="race"><option value="">—</option></select>
-            <input type="text" id="raceCustom" class="custom-input hidden" placeholder="Custom race" />
-          </label>
-          <label>Class
-            <select id="class"><option value="">—</option></select>
-            <input type="text" id="classCustom" class="custom-input hidden" placeholder="Custom class" />
-          </label>
-          <label>Level <input type="number" id="level" min="1" max="20" value="1" /></label>
-          <label>Background
-            <select id="background"><option value="">—</option></select>
-            <input type="text" id="backgroundCustom" class="custom-input hidden" placeholder="Custom background" />
-          </label>
-          <label>Player Name <input type="text" id="playerName" placeholder="—" /></label>
-          <label>Alignment <input type="text" id="alignment" placeholder="—" /></label>
-          <label>Experience Points <input type="number" id="experiencePoints" min="0" value="0" /></label>
-          <label>Inspiration <input type="number" id="inspiration" min="0" value="0" /></label>
-          <label>Proficiency Bonus <input type="number" id="proficiencyBonus" value="2" /></label>
-        </div>
-      </section>
-
+      <!-- Left column: Abilities, Saves, Skills, Senses -->
+      <aside class="sheet-left">
       <!-- Abilities -->
       <section class="card card-abilities">
         <h2>Abilities</h2>
@@ -206,6 +199,28 @@
         </div>
       </section>
 
+      <!-- Passive scores & senses -->
+      <section class="card card-senses">
+        <h2>Senses</h2>
+        <div class="senses-list">
+          <div class="sense-row"><span class="sense-label">Passive Perception</span><span id="passive-perception" class="sense-value">10</span></div>
+          <div class="sense-row"><span class="sense-label">Passive Investigation</span><span id="passive-investigation" class="sense-value">10</span></div>
+          <div class="sense-row"><span class="sense-label">Passive Insight</span><span id="passive-insight" class="sense-value">10</span></div>
+        </div>
+      </section>
+
+      <!-- Tools & Languages -->
+      <section class="card card-tools-langs">
+        <h2>Tools & Languages</h2>
+        <div class="tools-langs-list">
+          <label class="tl-row"><span class="tl-label">Tools</span><input type="text" id="toolProficiencies" placeholder="e.g. Thieves' tools, Smith's tools" /></label>
+          <label class="tl-row"><span class="tl-label">Languages</span><input type="text" id="languages" placeholder="e.g. Common, Elvish" /></label>
+        </div>
+      </section>
+      </aside>
+
+      <!-- Right column: Combat stats, HP, tabbed content -->
+      <div class="sheet-right">
       <!-- Combat -->
       <section class="card card-combat">
         <h2>Combat</h2>
@@ -217,10 +232,6 @@
           <div class="combat-field">
             <label>Initiative</label>
             <input type="number" id="initiative" value="0" />
-          </div>
-          <div class="combat-field">
-            <label>Speed</label>
-            <input type="number" id="speed" min="0" value="30" />
           </div>
           <div class="combat-field">
             <label>Hit Point Maximum</label>
@@ -251,6 +262,15 @@
             <span>Failures</span>
             <input type="number" id="deathFailures" min="0" max="3" value="0" />
           </div>
+        </div>
+      </section>
+
+      <!-- Proficiency, Speed, Inspiration -->
+      <section class="card card-quick-stats">
+        <div class="quick-stats-grid">
+          <div class="quick-stat"><label>Proficiency Bonus</label><span id="prof-display" class="stat-value">+2</span></div>
+          <div class="quick-stat"><label>Speed</label><input type="number" id="speed" min="0" value="30" class="stat-input" /> ft.</div>
+          <div class="quick-stat"><label>Inspiration</label><input type="number" id="inspiration" min="0" value="0" class="stat-input" /></div>
         </div>
       </section>
 
@@ -287,26 +307,86 @@
         <div id="dice-result" class="dice-result"></div>
       </section>
 
-      <!-- Attacks, equipment, notes -->
-      <section class="card card-attacks">
-        <h2>Attacks & Spellcasting</h2>
-        <textarea id="attacks" rows="4" placeholder="Name | Atk Bonus | Damage/Type"></textarea>
+      <!-- Tabbed content -->
+      <section class="card card-tabs">
+        <div class="tabs-nav">
+          <button type="button" class="tab-btn active" data-tab="actions">Actions</button>
+          <button type="button" class="tab-btn" data-tab="inventory">Inventory</button>
+          <button type="button" class="tab-btn" data-tab="features">Features & Traits</button>
+          <button type="button" class="tab-btn" data-tab="background">Background</button>
+          <button type="button" class="tab-btn" data-tab="notes">Notes</button>
+        </div>
+        <div class="tabs-content">
+          <div id="tab-actions" class="tab-pane active">
+            <textarea id="attacks" rows="5" placeholder="Attacks & spellcasting: Name | Atk Bonus | Damage/Type"></textarea>
+          </div>
+          <div id="tab-inventory" class="tab-pane hidden">
+            <textarea id="equipment" rows="8" placeholder="List equipment…"></textarea>
+          </div>
+          <div id="tab-features" class="tab-pane hidden">
+            <button type="button" id="btn-feature-choices" class="btn btn-ghost btn-sm feature-choices-btn">Manage Feature Choices</button>
+            <div id="featuresAuto" class="features-auto"></div>
+            <label class="features-custom-label">Additional features & traits</label>
+            <textarea id="customFeatures" rows="5" placeholder="Other features, traits, or notes…"></textarea>
+          </div>
+          <div id="tab-background" class="tab-pane hidden">
+            <div class="background-subnav">
+              <button type="button" class="bg-sub-btn active" data-bg-filter="all">All</button>
+              <button type="button" class="bg-sub-btn" data-bg-filter="background">Background</button>
+              <button type="button" class="bg-sub-btn" data-bg-filter="characteristics">Characteristics</button>
+              <button type="button" class="bg-sub-btn" data-bg-filter="personality">Personality</button>
+            </div>
+            <div id="bg-section-background" class="bg-section" data-bg-section="background">
+              <h3 class="bg-section-heading">Background</h3>
+              <div id="backgroundDisplay" class="background-display"></div>
+            </div>
+            <div id="bg-section-characteristics" class="bg-section" data-bg-section="characteristics">
+              <h3 class="bg-section-heading">Characteristics</h3>
+              <div class="characteristics-grid">
+                <label><span class="char-label">Alignment</span><input type="text" id="alignment" placeholder="e.g. Chaotic Good" /></label>
+                <label><span class="char-label">Gender</span><input type="text" id="bgGender" placeholder="e.g. Male" /></label>
+                <label><span class="char-label">Eyes</span><input type="text" id="bgEyes" placeholder="e.g. Sharp Grey" /></label>
+                <label><span class="char-label">Size</span><input type="text" id="bgSize" placeholder="e.g. Medium" /></label>
+                <label><span class="char-label">Height</span><input type="text" id="bgHeight" placeholder="e.g. 5'7\"" /></label>
+                <label><span class="char-label">Faith</span><input type="text" id="bgFaith" placeholder="e.g. Protestant" /></label>
+                <label><span class="char-label">Hair</span><input type="text" id="bgHair" placeholder="e.g. Blonde" /></label>
+                <label><span class="char-label">Skin</span><input type="text" id="bgSkin" placeholder="e.g. Slightly Tanned" /></label>
+                <label><span class="char-label">Age</span><input type="text" id="bgAge" placeholder="e.g. 25" /></label>
+                <label><span class="char-label">Weight</span><input type="text" id="bgWeight" placeholder="e.g. 125 lb." /></label>
+              </div>
+            </div>
+            <div id="bg-section-personality" class="bg-section" data-bg-section="personality">
+              <h3 class="bg-section-heading">Personality</h3>
+              <div class="personality-fields">
+                <label class="personality-label">Personality Traits</label>
+                <textarea id="bgPersonalityTraits" rows="3" placeholder="Describe your character's personality traits…"></textarea>
+                <label class="personality-label">Ideals</label>
+                <textarea id="bgIdeals" rows="2" placeholder="What ideals drive your character?…"></textarea>
+                <label class="personality-label">Bonds</label>
+                <textarea id="bgBonds" rows="2" placeholder="What bonds connect your character to the world?…"></textarea>
+                <label class="personality-label">Flaws</label>
+                <textarea id="bgFlaws" rows="2" placeholder="What flaws or weaknesses does your character have?…"></textarea>
+              </div>
+            </div>
+          </div>
+          <div id="tab-notes" class="tab-pane hidden">
+            <div class="notes-sections">
+              <label class="notes-label">Organizations</label>
+              <textarea id="notesOrganizations" rows="2" placeholder="Organizations your character belongs to…"></textarea>
+              <label class="notes-label">Allies</label>
+              <textarea id="notesAllies" rows="2" placeholder="Notable allies and contacts…"></textarea>
+              <label class="notes-label">Enemies</label>
+              <textarea id="notesEnemies" rows="2" placeholder="Enemies and rivals…"></textarea>
+              <label class="notes-label">Backstory</label>
+              <textarea id="notesBackstory" rows="6" placeholder="Your character's backstory…"></textarea>
+              <label class="notes-label">Other</label>
+              <textarea id="notesOther" rows="2" placeholder="Other notes…"></textarea>
+            </div>
+          </div>
+        </div>
       </section>
-      <section class="card card-equipment">
-        <h2>Equipment</h2>
-        <textarea id="equipment" rows="6" placeholder="List equipment…"></textarea>
-      </section>
-      <section class="card card-features">
-        <h2>Features & Traits</h2>
-        <button type="button" id="btn-feature-choices" class="btn btn-ghost btn-sm feature-choices-btn">Manage Feature Choices</button>
-        <div id="featuresAuto" class="features-auto"></div>
-        <label class="features-custom-label">Additional features & traits</label>
-        <textarea id="customFeatures" rows="4" placeholder="Other features, traits, or notes…"></textarea>
-      </section>
-      <section class="card card-notes">
-        <h2>Notes</h2>
-        <textarea id="notes" rows="4" placeholder="Other notes…"></textarea>
-      </section>
+
+      </div>
     </main>
 
     <!-- Feature choices modal -->
@@ -316,6 +396,24 @@
         <p class="feature-choices-hint">Make choices for features that require them at your level.</p>
         <div id="feature-choices-list"></div>
         <button type="button" id="btn-close-feature-choices" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
+
+    <!-- Manage modal (character info) -->
+    <div id="manage-modal" class="modal hidden">
+      <div class="modal-content manage-modal-content">
+        <h3>Manage Character</h3>
+        <div class="info-grid">
+          <label>Character Name <input type="text" id="name" placeholder="—" /></label>
+          <label>Race <select id="race"><option value="">—</option></select><input type="text" id="raceCustom" class="custom-input hidden" placeholder="Custom race" /></label>
+          <label>Class <select id="class"><option value="">—</option></select><input type="text" id="classCustom" class="custom-input hidden" placeholder="Custom class" /></label>
+          <label>Level <input type="number" id="level" min="1" max="20" value="1" /></label>
+          <label>Background <select id="background"><option value="">—</option></select><input type="text" id="backgroundCustom" class="custom-input hidden" placeholder="Custom background" /></label>
+          <label>Player Name <input type="text" id="playerName" placeholder="—" /></label>
+          <label>Experience Points <input type="number" id="experiencePoints" min="0" value="0" /></label>
+          <label>Proficiency Bonus <input type="number" id="proficiencyBonus" value="2" /></label>
+        </div>
+        <button type="button" id="btn-close-manage" class="btn btn-ghost">Close</button>
       </div>
     </div>
 
