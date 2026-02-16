@@ -1035,6 +1035,167 @@ document.getElementById('feature-choices-modal')?.addEventListener('click', (e) 
   if (e.target.id === 'feature-choices-modal') e.target.classList.add('hidden');
 });
 
+/* ========== Reference Database ========== */
+let refState = { category: 'spells', selectedIndex: -1, spells: null, spellsLoading: false };
+
+function openReference() {
+  refState.category = 'spells';
+  refState.selectedIndex = -1;
+  document.querySelectorAll('.ref-sub-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.ref-sub-btn[data-ref-cat="spells"]')?.classList.add('active');
+  document.getElementById('reference-search-input').value = '';
+  document.getElementById('reference-spell-filters')?.classList.toggle('hidden', false);
+  ['ref-spell-filter-school', 'ref-spell-filter-class', 'ref-spell-filter-level'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('reference-modal').classList.remove('hidden');
+  loadReferenceSpells();
+  renderReferenceList();
+  renderReferenceDetail();
+}
+
+async function loadReferenceSpells() {
+  if (refState.spells !== null || refState.spellsLoading) return;
+  refState.spellsLoading = true;
+  const listEl = document.getElementById('ref-list');
+  if (listEl) listEl.innerHTML = '<div class="ref-loading">Loading spells…</div>';
+  try {
+    const res = await fetch(API_BASE + '/api/spells');
+    if (!res.ok) throw new Error('Failed to load');
+    refState.spells = await res.json();
+  } catch (err) {
+    refState.spells = (typeof REFERENCE_SPELLS !== 'undefined' && REFERENCE_SPELLS.length) ? REFERENCE_SPELLS : [];
+    if (listEl && refState.spells.length === 0) listEl.innerHTML = '<div class="ref-loading ref-error">Could not load spells. Is the server running?</div>';
+  }
+  refState.spellsLoading = false;
+  renderReferenceList();
+  renderReferenceDetail();
+}
+
+function getReferenceData() {
+  const q = (document.getElementById('reference-search-input')?.value || '').toLowerCase().trim();
+  if (refState.category === 'spells') {
+    let list = refState.spells || [];
+    const school = document.getElementById('ref-spell-filter-school')?.value || '';
+    const cls = document.getElementById('ref-spell-filter-class')?.value || '';
+    const levelStr = document.getElementById('ref-spell-filter-level')?.value || '';
+    const levelFilter = levelStr === '' ? null : parseInt(levelStr, 10);
+    list = list.filter(s => {
+      if (school && (s.school || '') !== school) return false;
+      if (cls && (!s.classes || !s.classes.includes(cls))) return false;
+      if (levelFilter !== null && s.level !== levelFilter) return false;
+      if (q && !(s.name || '').toLowerCase().includes(q) && !(s.school || '').toLowerCase().includes(q) && !(s.desc || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    return list;
+  }
+  if (refState.category === 'items' && typeof REFERENCE_ITEMS !== 'undefined') {
+    let list = REFERENCE_ITEMS;
+    if (q) list = list.filter(i => (i.name || '').toLowerCase().includes(q) || (i.type || '').toLowerCase().includes(q) || (i.desc || '').toLowerCase().includes(q));
+    return list;
+  }
+  if (refState.category === 'rules' && typeof REFERENCE_RULES !== 'undefined') {
+    let list = REFERENCE_RULES;
+    if (q) list = list.filter(r => (r.title || '').toLowerCase().includes(q) || (r.content || '').toLowerCase().includes(q));
+    return list;
+  }
+  return [];
+}
+
+function renderReferenceList() {
+  const listEl = document.getElementById('ref-list');
+  if (!listEl) return;
+  if (refState.category === 'spells' && refState.spellsLoading) return;
+  const data = getReferenceData();
+  listEl.innerHTML = '';
+  data.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'ref-list-item' + (i === refState.selectedIndex ? ' selected' : '');
+    if (refState.category === 'spells') {
+      const levelStr = item.level === 0 ? 'Cantrip' : (item.level === 1 ? '1st' : item.level === 2 ? '2nd' : item.level === 3 ? '3rd' : item.level + 'th');
+      div.innerHTML = '<span class="spell-level-tag">[' + levelStr + ']</span>' + escapeHtml(item.name || '');
+    } else {
+      div.textContent = item.name || item.title;
+    }
+    div.dataset.index = i;
+    div.addEventListener('click', () => {
+      refState.selectedIndex = i;
+      renderReferenceList();
+      renderReferenceDetail();
+    });
+    listEl.appendChild(div);
+  });
+  if (data.length > 0 && refState.selectedIndex < 0) {
+    refState.selectedIndex = 0;
+    renderReferenceList();
+    renderReferenceDetail();
+  } else if (data.length === 0) {
+    listEl.innerHTML = '<div class="ref-loading">No spells match the filters.</div>';
+    renderReferenceDetail();
+  }
+}
+
+function renderReferenceDetail() {
+  const detailEl = document.getElementById('ref-detail');
+  if (!detailEl) return;
+  const data = getReferenceData();
+  const item = data[refState.selectedIndex];
+  if (!item) {
+    detailEl.innerHTML = '<p class="ref-desc">' + (refState.category === 'spells' && refState.spellsLoading ? 'Loading…' : 'Select an entry from the list.') + '</p>';
+    return;
+  }
+  if (refState.category === 'spells') {
+    const s = item;
+    const levelStr = s.level === 0 ? 'Cantrip' : (s.level === 1 ? '1st' : s.level === 2 ? '2nd' : s.level === 3 ? '3rd' : s.level + 'th') + '-level';
+    const classList = s.classes && s.classes.length ? 'Classes: ' + s.classes.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ') : '';
+    detailEl.innerHTML = '<h4>' + escapeHtml(s.name) + '</h4>' +
+      '<div class="ref-meta">' + escapeHtml(levelStr) + ' ' + escapeHtml(s.school || '') + ' · ' + escapeHtml(s.casting_time || '') + ' · ' + escapeHtml(s.range || '') + ' · ' + escapeHtml(s.components || '') + ' · ' + escapeHtml(s.duration || '') + (s.concentration ? ' (conc.)' : '') + (classList ? '<br>' + escapeHtml(classList) : '') + '</div>' +
+      '<div class="ref-desc">' + escapeHtml(s.desc || '') + '</div>';
+  } else if (refState.category === 'items') {
+    detailEl.innerHTML = '<h4>' + escapeHtml(item.name) + '</h4>' +
+      '<div class="ref-meta">' + escapeHtml(item.type || '') + '</div>' +
+      '<div class="ref-desc">' + escapeHtml(item.desc || '') + '</div>';
+  } else if (refState.category === 'rules') {
+    detailEl.innerHTML = '<h4>' + escapeHtml(item.title) + '</h4>' +
+      '<div class="ref-desc">' + escapeHtml(item.content || '') + '</div>';
+  }
+}
+
+document.getElementById('btn-reference')?.addEventListener('click', openReference);
+document.getElementById('btn-close-reference')?.addEventListener('click', () => {
+  document.getElementById('reference-modal').classList.add('hidden');
+});
+document.getElementById('reference-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'reference-modal') e.target.classList.add('hidden');
+});
+document.querySelectorAll('.ref-sub-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    refState.category = btn.dataset.refCat;
+    refState.selectedIndex = -1;
+    document.querySelectorAll('.ref-sub-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtersEl = document.getElementById('reference-spell-filters');
+    filtersEl?.classList.toggle('hidden', refState.category !== 'spells');
+    if (refState.category === 'spells' && !refState.spells) loadReferenceSpells();
+    renderReferenceList();
+    renderReferenceDetail();
+  });
+});
+
+['ref-spell-filter-school', 'ref-spell-filter-class', 'ref-spell-filter-level'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    refState.selectedIndex = -1;
+    renderReferenceList();
+    renderReferenceDetail();
+  });
+});
+document.getElementById('reference-search-input')?.addEventListener('input', () => {
+  refState.selectedIndex = -1;
+  renderReferenceList();
+  renderReferenceDetail();
+});
+
 function populateSelects() {
   const fill = (selectId, options) => {
     const sel = document.getElementById(selectId);

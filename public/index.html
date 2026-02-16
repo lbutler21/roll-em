@@ -33,6 +33,7 @@
         <span class="xp-next">LVL 2</span>
       </div>
       <div class="char-banner-actions">
+        <button type="button" id="btn-reference" class="btn btn-ghost" title="Spells, items & rules reference">Reference</button>
         <button type="button" id="btn-new" class="btn btn-ghost">Blank</button>
         <button type="button" id="btn-load" class="btn btn-ghost">Load</button>
         <button type="button" id="btn-save" class="btn btn-ghost">Save</button>
@@ -417,6 +418,68 @@
       </div>
     </div>
 
+    <!-- Reference database modal -->
+    <div id="reference-modal" class="modal hidden">
+      <div class="modal-content reference-modal-content">
+        <h3>Reference Database</h3>
+        <div class="reference-subnav">
+          <button type="button" class="ref-sub-btn active" data-ref-cat="spells">Spells</button>
+          <button type="button" class="ref-sub-btn" data-ref-cat="items">Items</button>
+          <button type="button" class="ref-sub-btn" data-ref-cat="rules">Rules</button>
+        </div>
+        <div class="reference-search">
+          <input type="text" id="reference-search-input" placeholder="Search…" />
+        </div>
+        <div id="reference-spell-filters" class="spell-filters hidden">
+          <label>
+            <span class="spell-filter-label">School</span>
+            <select id="ref-spell-filter-school">
+              <option value="">All Schools</option>
+              <option value="Abjuration">Abjuration</option>
+              <option value="Conjuration">Conjuration</option>
+              <option value="Divination">Divination</option>
+              <option value="Enchantment">Enchantment</option>
+              <option value="Evocation">Evocation</option>
+              <option value="Illusion">Illusion</option>
+              <option value="Necromancy">Necromancy</option>
+              <option value="Transmutation">Transmutation</option>
+            </select>
+          </label>
+          <label>
+            <span class="spell-filter-label">Class</span>
+            <select id="ref-spell-filter-class">
+              <option value="">All Classes</option>
+              <option value="bard">Bard</option>
+              <option value="cleric">Cleric</option>
+              <option value="druid">Druid</option>
+              <option value="paladin">Paladin</option>
+              <option value="ranger">Ranger</option>
+              <option value="sorcerer">Sorcerer</option>
+              <option value="warlock">Warlock</option>
+              <option value="wizard">Wizard</option>
+              <option value="artificer">Artificer</option>
+            </select>
+          </label>
+          <label>
+            <span class="spell-filter-label">Level</span>
+            <select id="ref-spell-filter-level">
+              <option value="">All Levels</option>
+              <option value="0">Cantrip</option>
+              <option value="1">1st</option>
+              <option value="2">2nd</option>
+              <option value="3">3rd</option>
+              <option value="4">4th</option>
+            </select>
+          </label>
+        </div>
+        <div class="reference-content">
+          <div id="ref-list" class="ref-list"></div>
+          <div id="ref-detail" class="ref-detail"></div>
+        </div>
+        <button type="button" id="btn-close-reference" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
+
     <!-- Load modal -->
     <div id="load-modal" class="modal hidden">
       <div class="modal-content">
@@ -431,6 +494,7 @@
   <script src="builder-data.js"></script>
   <script src="descriptions.js"></script>
   <script src="feature-choices.js"></script>
+  <script src="data-reference.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

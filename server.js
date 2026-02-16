@@ -143,4 +143,49 @@ app.delete('/api/characters/:id', (req, res) => {
   }
 });
 
+// Fetch all 5e spells from Open5e API (cached)
+let spellsCache = null;
+
+async function fetchAllSpells() {
+  if (spellsCache) return spellsCache;
+  const all = [];
+  let url = 'https://api.open5e.com/spells/?limit=500';
+  while (url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch spells');
+    const data = await res.json();
+    const level4OrLower = (data.results || []).filter(s => {
+      const lvl = s.level_int ?? (s.level === 'Cantrip' ? 0 : parseInt(String(s.level || '').replace(/\D/g, ''), 10));
+      return !isNaN(lvl) && lvl <= 4;
+    });
+    all.push(...level4OrLower);
+    url = data.next || null;
+  }
+  spellsCache = all;
+  return all;
+}
+
+app.get('/api/spells', async (req, res) => {
+  try {
+    const spells = await fetchAllSpells();
+    const mapped = spells
+      .map(s => ({
+        name: s.name,
+        level: s.level_int ?? (s.level === 'Cantrip' ? 0 : parseInt(String(s.level).replace(/\D/g, ''), 10) || 0),
+        school: (s.school || '').charAt(0).toUpperCase() + (s.school || '').slice(1).toLowerCase(),
+        classes: (s.spell_lists || []).length ? s.spell_lists : (s.dnd_class || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
+        casting_time: s.casting_time || '',
+        range: s.range || '',
+        components: s.components || '',
+        duration: s.duration || '',
+        concentration: !!(s.concentration === 'yes' || s.requires_concentration),
+        desc: [s.desc, s.higher_level].filter(Boolean).join('\n\n')
+      }))
+      .filter(s => s.level <= 4);
+    res.json(mapped);
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch spells' });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));

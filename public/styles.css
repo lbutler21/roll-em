@@ -523,6 +523,239 @@ body {
   max-width: 520px;
 }
 
+/* Reference database modal */
+.reference-modal-content {
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.reference-modal-content h3 {
+  margin-bottom: 0.75rem;
+}
+
+.reference-subnav {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.ref-sub-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.ref-sub-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.ref-sub-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.reference-search input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.reference-content {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1rem;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.ref-list {
+  overflow-y: auto;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+
+.ref-list-item {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.ref-list-item:hover {
+  background: rgba(196, 30, 58, 0.1);
+}
+
+.ref-list-item.selected {
+  background: rgba(196, 30, 58, 0.15);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.ref-list-item .spell-level-tag {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-right: 0.35rem;
+}
+
+.ref-list-item.selected .spell-level-tag {
+  color: var(--accent);
+  opacity: 0.9;
+}
+
+.ref-loading {
+  padding: 1rem;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.ref-loading.ref-error {
+  color: var(--danger, #c41e3a);
+}
+
+.ref-detail {
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: rgba(0,0,0,0.03);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ref-detail h4 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.ref-detail .ref-meta {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.5rem;
+}
+
+.ref-detail .ref-desc {
+  white-space: pre-line;
+}
+
+@media (max-width: 600px) {
+  .reference-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Spells tab */
+.spell-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.spell-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spell-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spell-filters select {
+  padding: 0.4rem 0.6rem;
+  min-width: 140px;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  font-size: 0.9rem;
+}
+
+.spell-list-container {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1rem;
+  min-height: 360px;
+}
+
+.spell-list-pane {
+  overflow-y: auto;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+
+.spell-list-item {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.spell-list-item:hover {
+  background: rgba(196, 30, 58, 0.1);
+}
+
+.spell-list-item.selected {
+  background: rgba(196, 30, 58, 0.15);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.spell-list-item .spell-level-tag {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-right: 0.35rem;
+}
+
+.spell-detail-pane {
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgba(0,0,0,0.03);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.spell-detail-pane h4 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.spell-detail-pane .spell-meta {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.75rem;
+}
+
+.spell-detail-pane .spell-desc {
+  white-space: pre-line;
+}
+
+@media (max-width: 600px) {
+  .spell-list-container {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card h2 {
   font-family: var(--font-display);
   font-size: 0.95rem;
