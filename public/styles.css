@@ -149,6 +149,60 @@ body {
 .save-status.saved { color: var(--success); }
 .save-status.error { color: var(--danger); }
 
+.auth-status,
+.auth-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-user span {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.85);
+}
+
+.btn-gated-by-auth:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Auth modal */
+.auth-modal-content {
+  max-width: 360px;
+}
+
+.auth-modal-content label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.auth-modal-content input {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  margin-top: 0.25rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.auth-error {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(185, 28, 28, 0.1);
+  color: var(--danger);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.auth-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
 .btn {
   font-family: var(--font-body);
   font-size: 0.95rem;

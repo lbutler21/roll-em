@@ -22,7 +22,15 @@
           </div>
         </div>
         <div class="char-banner-right">
-          <button type="button" id="btn-manage" class="btn btn-banner">Manage</button>
+          <span id="auth-status" class="auth-status">
+            <button type="button" id="btn-login" class="btn btn-banner">Log in</button>
+            <button type="button" id="btn-register" class="btn btn-ghost">Register</button>
+          </span>
+          <span id="auth-user" class="auth-user hidden">
+            <span id="auth-username"></span>
+            <button type="button" id="btn-logout" class="btn btn-ghost">Log out</button>
+          </span>
+          <button type="button" id="btn-manage" class="btn btn-banner btn-gated-by-auth" title="Manage character" data-title-logged-in="Manage character">Manage</button>
         </div>
       </div>
       <div class="char-banner-bar">
@@ -35,8 +43,8 @@
       <div class="char-banner-actions">
         <button type="button" id="btn-reference" class="btn btn-ghost" title="Open D&D Beyond reference (spells, equipment, rules)">Reference</button>
         <button type="button" id="btn-new" class="btn btn-ghost">Blank</button>
-        <button type="button" id="btn-load" class="btn btn-ghost">Load</button>
-        <button type="button" id="btn-save" class="btn btn-ghost">Save</button>
+        <button type="button" id="btn-load" class="btn btn-ghost btn-gated-by-auth" title="Log in to load characters" data-title-logged-in="Load character">Load</button>
+        <button type="button" id="btn-save" class="btn btn-ghost btn-gated-by-auth" title="Log in to save" data-title-logged-in="Save to server">Save</button>
         <span id="save-status" class="save-status"></span>
       </div>
     </header>
@@ -389,6 +397,23 @@
 
       </div>
     </main>
+
+    <!-- Auth modal (login / register) -->
+    <div id="auth-modal" class="modal hidden">
+      <div class="modal-content auth-modal-content">
+        <h3 id="auth-modal-title">Log in</h3>
+        <div id="auth-error" class="auth-error hidden"></div>
+        <form id="auth-form">
+          <label>Username <input type="text" id="auth-username-input" autocomplete="username" required /></label>
+          <label>Password <input type="password" id="auth-password-input" autocomplete="current-password" required /></label>
+          <div class="auth-form-actions">
+            <button type="submit" id="auth-submit" class="btn btn-primary">Log in</button>
+            <button type="button" id="auth-switch-mode" class="btn btn-ghost">Create an account</button>
+            <button type="button" id="auth-cancel" class="btn btn-ghost">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Feature choices modal -->
     <div id="feature-choices-modal" class="modal hidden">

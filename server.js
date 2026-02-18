@@ -1,20 +1,40 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'characters.json');
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'characters.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dice-proj-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 }
+}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function ensureDataDir() {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, '[]');
+  if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
+}
+
+function readUsers() {
+  ensureDataDir();
+  return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+}
+
+function writeUsers(users) {
+  ensureDataDir();
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
 function readCharacters() {
@@ -69,11 +89,70 @@ function getDefaultCharacter() {
   };
 }
 
-// List all characters
-app.get('/api/characters', (req, res) => {
+// ---------- Auth ----------
+function requireAuth(req, res, next) {
+  if (req.session && req.session.userId) return next();
+  return res.status(401).json({ error: 'Not logged in' });
+}
+
+app.get('/api/auth/me', (req, res) => {
+  if (req.session && req.session.userId) {
+    const users = readUsers();
+    const user = users.find(u => u.id === req.session.userId);
+    if (user) return res.json({ id: user.id, username: user.username });
+  }
+  res.json(null);
+});
+
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const u = (username || '').trim().toLowerCase();
+    const p = password == null ? '' : String(password);
+    if (!u || u.length < 2) return res.status(400).json({ error: 'Username must be at least 2 characters' });
+    if (!p || p.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const users = readUsers();
+    if (users.some(usr => (usr.username || '').toLowerCase() === u)) return res.status(409).json({ error: 'Username already taken' });
+    const id = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    const hash = bcrypt.hashSync(p, 10);
+    users.push({ id, username: u, passwordHash: hash, createdAt: new Date().toISOString() });
+    writeUsers(users);
+    req.session.userId = id;
+    req.session.username = u;
+    res.status(201).json({ id, username: u });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const u = (username || '').trim().toLowerCase();
+    const p = password == null ? '' : String(password);
+    if (!u || !p) return res.status(400).json({ error: 'Username and password required' });
+    const users = readUsers();
+    const user = users.find(usr => (usr.username || '').toLowerCase() === u);
+    if (!user || !bcrypt.compareSync(p, user.passwordHash || '')) return res.status(401).json({ error: 'Invalid username or password' });
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    res.json({ id: user.id, username: user.username });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy(() => {});
+  res.json({ ok: true });
+});
+
+// ---------- Characters (require login; scoped to user) ----------
+app.get('/api/characters', requireAuth, (req, res) => {
   try {
     const characters = readCharacters();
-    const list = characters.map(c => ({
+    const mine = characters.filter(c => c.userId === req.session.userId);
+    const list = mine.map(c => ({
       id: c.id,
       name: c.name || 'Unnamed',
       class: c.class,
@@ -86,11 +165,10 @@ app.get('/api/characters', (req, res) => {
   }
 });
 
-// Get one character
-app.get('/api/characters/:id', (req, res) => {
+app.get('/api/characters/:id', requireAuth, (req, res) => {
   try {
     const characters = readCharacters();
-    const c = characters.find(x => x.id === req.params.id);
+    const c = characters.find(x => x.id === req.params.id && x.userId === req.session.userId);
     if (!c) return res.status(404).json({ error: 'Character not found' });
     res.json(c);
   } catch (err) {
@@ -98,12 +176,12 @@ app.get('/api/characters/:id', (req, res) => {
   }
 });
 
-// Create character
-app.post('/api/characters', (req, res) => {
+app.post('/api/characters', requireAuth, (req, res) => {
   try {
     const characters = readCharacters();
     const body = { ...getDefaultCharacter(), ...req.body };
     body.id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    body.userId = req.session.userId;
     body.createdAt = new Date().toISOString();
     body.updatedAt = body.createdAt;
     characters.push(body);
@@ -114,13 +192,12 @@ app.post('/api/characters', (req, res) => {
   }
 });
 
-// Update character
-app.put('/api/characters/:id', (req, res) => {
+app.put('/api/characters/:id', requireAuth, (req, res) => {
   try {
     const characters = readCharacters();
-    const idx = characters.findIndex(x => x.id === req.params.id);
+    const idx = characters.findIndex(x => x.id === req.params.id && x.userId === req.session.userId);
     if (idx === -1) return res.status(404).json({ error: 'Character not found' });
-    const updated = { ...characters[idx], ...req.body, id: req.params.id, updatedAt: new Date().toISOString() };
+    const updated = { ...characters[idx], ...req.body, id: req.params.id, userId: req.session.userId, updatedAt: new Date().toISOString() };
     characters[idx] = updated;
     writeCharacters(characters);
     res.json(updated);
@@ -129,13 +206,12 @@ app.put('/api/characters/:id', (req, res) => {
   }
 });
 
-// Delete character
-app.delete('/api/characters/:id', (req, res) => {
+app.delete('/api/characters/:id', requireAuth, (req, res) => {
   try {
     let characters = readCharacters();
-    const len = characters.length;
-    characters = characters.filter(x => x.id !== req.params.id);
-    if (characters.length === len) return res.status(404).json({ error: 'Character not found' });
+    const idx = characters.findIndex(x => x.id === req.params.id && x.userId === req.session.userId);
+    if (idx === -1) return res.status(404).json({ error: 'Character not found' });
+    characters.splice(idx, 1);
     writeCharacters(characters);
     res.json({ deleted: req.params.id });
   } catch (err) {

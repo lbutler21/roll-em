@@ -1,4 +1,46 @@
 const API_BASE = '';
+const API_CREDENTIALS = { credentials: 'include' };
+
+let authUser = null;
+
+async function checkAuth() {
+  try {
+    const res = await fetch(API_BASE + '/api/auth/me', API_CREDENTIALS);
+    authUser = res.ok ? await res.json() : null;
+  } catch (e) {
+    authUser = null;
+  }
+  const statusEl = document.getElementById('auth-status');
+  const userEl = document.getElementById('auth-user');
+  const usernameEl = document.getElementById('auth-username');
+  if (statusEl) statusEl.classList.toggle('hidden', !!authUser);
+  if (userEl) userEl.classList.toggle('hidden', !authUser);
+  if (usernameEl) usernameEl.textContent = authUser ? 'Logged in as ' + (authUser.username || '') : '';
+  const gated = document.querySelectorAll('.btn-gated-by-auth');
+  gated.forEach(el => { el.disabled = !authUser; el.title = authUser ? (el.dataset.titleLoggedIn || '') : 'Log in to use this'; });
+}
+
+function openAuthModal(mode) {
+  authModalMode = mode;
+  const title = document.getElementById('auth-modal-title');
+  const submitBtn = document.getElementById('auth-submit');
+  const switchBtn = document.getElementById('auth-switch-mode');
+  document.getElementById('auth-username-input').value = '';
+  document.getElementById('auth-password-input').value = '';
+  document.getElementById('auth-error').classList.add('hidden');
+  if (mode === 'register') {
+    if (title) title.textContent = 'Create account';
+    if (submitBtn) submitBtn.textContent = 'Register';
+    if (switchBtn) switchBtn.textContent = 'Already have an account? Log in';
+  } else {
+    if (title) title.textContent = 'Log in';
+    if (submitBtn) submitBtn.textContent = 'Log in';
+    if (switchBtn) switchBtn.textContent = 'Create an account';
+  }
+  document.getElementById('auth-modal').classList.remove('hidden');
+}
+
+let authModalMode = 'login';
 
 function getDisplayName(selectId, customId) {
   const sel = document.getElementById(selectId);
@@ -597,12 +639,49 @@ document.getElementById('manage-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'manage-modal') e.target.classList.add('hidden');
 });
 
+document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
+document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
+document.getElementById('btn-logout')?.addEventListener('click', async () => {
+  await fetch(API_BASE + '/api/auth/logout', { method: 'POST', ...API_CREDENTIALS });
+  checkAuth();
+});
+document.getElementById('auth-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('auth-username-input').value.trim();
+  const password = document.getElementById('auth-password-input').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.classList.add('hidden');
+  const url = authModalMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+  try {
+    const res = await fetch(API_BASE + url, {
+      method: 'POST',
+      ...API_CREDENTIALS,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Request failed';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    document.getElementById('auth-modal').classList.add('hidden');
+    checkAuth();
+  } catch (err) {
+    errEl.textContent = 'Network error';
+    errEl.classList.remove('hidden');
+  }
+});
+document.getElementById('auth-switch-mode')?.addEventListener('click', () => openAuthModal(authModalMode === 'login' ? 'register' : 'login'));
+document.getElementById('auth-cancel')?.addEventListener('click', () => document.getElementById('auth-modal').classList.add('hidden'));
+document.getElementById('auth-modal')?.addEventListener('click', (e) => { if (e.target.id === 'auth-modal') e.target.classList.add('hidden'); });
+
 document.getElementById('btn-delete-character')?.addEventListener('click', async () => {
   if (!state.characterId) return;
   if (!confirm('Delete this character? This cannot be undone.')) return;
   const statusEl = document.getElementById('save-status');
   try {
-    const res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(state.characterId), { method: 'DELETE' });
+    const res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(state.characterId), { method: 'DELETE', ...API_CREDENTIALS });
     if (!res.ok) throw new Error('Delete failed');
     state.characterId = null;
     loadCharacterIntoForm({
@@ -959,17 +1038,27 @@ async function saveCharacter() {
     if (state.characterId) {
       res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(state.characterId), {
         method: 'PUT',
+        ...API_CREDENTIALS,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
       res = await fetch(API_BASE + '/api/characters', {
         method: 'POST',
+        ...API_CREDENTIALS,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     }
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      if (res.status === 401) {
+        checkAuth();
+        statusEl.textContent = 'Please log in to save.';
+        statusEl.classList.add('error');
+        return;
+      }
+      throw new Error(await res.text());
+    }
     const data = await res.json();
     state.characterId = data.id;
     state.character = data;
@@ -987,7 +1076,12 @@ async function renderCharacterList() {
   const listEl = document.getElementById('character-list');
   listEl.innerHTML = '';
   try {
-    const res = await fetch(API_BASE + '/api/characters');
+    const res = await fetch(API_BASE + '/api/characters', API_CREDENTIALS);
+    if (res.status === 401) {
+      checkAuth();
+      listEl.innerHTML = '<li class="char-list-empty">Please log in to load characters.</li>';
+      return;
+    }
     if (!res.ok) throw new Error('Failed to load list');
     const list = await res.json();
     if (list.length === 0) {
@@ -1002,7 +1096,7 @@ async function renderCharacterList() {
           e.stopPropagation();
           if (!confirm('Delete "' + (c.name || 'Unnamed') + '"? This cannot be undone.')) return;
           try {
-            const delRes = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(c.id), { method: 'DELETE' });
+            const delRes = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(c.id), { method: 'DELETE', ...API_CREDENTIALS });
             if (!delRes.ok) throw new Error('Delete failed');
             await renderCharacterList();
           } catch (err) {
@@ -1024,7 +1118,7 @@ document.getElementById('btn-load')?.addEventListener('click', async () => {
 
 async function loadCharacter(id) {
   try {
-    const res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(id));
+    const res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(id), API_CREDENTIALS);
     if (!res.ok) throw new Error('Not found');
     const data = await res.json();
     loadCharacterIntoForm(data);
@@ -1365,3 +1459,4 @@ updateBanner();
 });
 
 updateModifiers();
+checkAuth();
