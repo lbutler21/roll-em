@@ -523,6 +523,26 @@ body {
   max-width: 520px;
 }
 
+.manage-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--grey-border);
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(185, 28, 28, 0.1);
+  border-color: var(--danger);
+}
+
 /* Reference database modal */
 .reference-modal-content {
   max-width: 680px;
@@ -1135,15 +1155,39 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
 }
 
 #character-list li:hover {
   background: rgba(196, 30, 58, 0.08);
 }
 
+#character-list .char-list-empty {
+  cursor: default;
+}
+
+#character-list .char-list-name {
+  flex: 1;
+  min-width: 0;
+}
+
 #character-list .char-level {
   font-size: 0.85rem;
   color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+#character-list .btn-delete-char {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--danger);
+  border-color: var(--danger);
+  cursor: pointer;
+}
+
+#character-list .btn-delete-char:hover {
+  background: rgba(185, 28, 28, 0.1);
 }
 
 /* Character Builder */

@@ -414,7 +414,10 @@
           <label>Experience Points <input type="number" id="experiencePoints" min="0" value="0" /></label>
           <label>Proficiency Bonus <input type="number" id="proficiencyBonus" value="2" /></label>
         </div>
-        <button type="button" id="btn-close-manage" class="btn btn-ghost">Close</button>
+        <div class="manage-actions">
+          <button type="button" id="btn-delete-character" class="btn btn-ghost btn-danger" title="Delete this character from the server">Delete character</button>
+          <button type="button" id="btn-close-manage" class="btn btn-ghost">Close</button>
+        </div>
       </div>
     </div>
 
@@ -486,7 +489,7 @@
     <div id="load-modal" class="modal hidden">
       <div class="modal-content">
         <h3>Load Character</h3>
-        <ul id="character-list"></ul>
+        <ul id="character-list" class="character-list"></ul>
         <button type="button" id="btn-close-load" class="btn btn-ghost">Close</button>
       </div>
     </div>

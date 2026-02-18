@@ -586,6 +586,8 @@ document.querySelectorAll('.quick-roll').forEach(btn => {
 });
 
 document.getElementById('btn-manage')?.addEventListener('click', () => {
+  const deleteBtn = document.getElementById('btn-delete-character');
+  if (deleteBtn) deleteBtn.style.display = state.characterId ? '' : 'none';
   document.getElementById('manage-modal').classList.remove('hidden');
 });
 document.getElementById('btn-close-manage')?.addEventListener('click', () => {
@@ -593,6 +595,41 @@ document.getElementById('btn-close-manage')?.addEventListener('click', () => {
 });
 document.getElementById('manage-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'manage-modal') e.target.classList.add('hidden');
+});
+
+document.getElementById('btn-delete-character')?.addEventListener('click', async () => {
+  if (!state.characterId) return;
+  if (!confirm('Delete this character? This cannot be undone.')) return;
+  const statusEl = document.getElementById('save-status');
+  try {
+    const res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(state.characterId), { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    state.characterId = null;
+    loadCharacterIntoForm({
+      name: '',
+      level: 1,
+      proficiencyBonus: 2,
+      armorClass: 10,
+      speed: 30,
+      hitPointMax: 10,
+      hitPointCurrent: 10,
+      hitPointTemp: 0,
+      hitDice: '1d8',
+      hitDiceTotal: '1',
+      abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+      savingThrows: {},
+      skills: {},
+      deathSaves: { successes: 0, failures: 0 }
+    });
+    setValue('customFeatures', '');
+    state.featureChoices = {};
+    statusEl.textContent = 'Character deleted.';
+    statusEl.className = 'save-status saved';
+    document.getElementById('manage-modal').classList.add('hidden');
+  } catch (err) {
+    statusEl.textContent = 'Could not delete character.';
+    statusEl.className = 'save-status error';
+  }
 });
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -946,7 +983,7 @@ async function saveCharacter() {
 
 document.getElementById('btn-save')?.addEventListener('click', saveCharacter);
 
-document.getElementById('btn-load')?.addEventListener('click', async () => {
+async function renderCharacterList() {
   const listEl = document.getElementById('character-list');
   listEl.innerHTML = '';
   try {
@@ -954,20 +991,35 @@ document.getElementById('btn-load')?.addEventListener('click', async () => {
     if (!res.ok) throw new Error('Failed to load list');
     const list = await res.json();
     if (list.length === 0) {
-      listEl.innerHTML = '<li style="cursor:default">No saved characters</li>';
+      listEl.innerHTML = '<li class="char-list-empty">No saved characters</li>';
     } else {
       list.forEach(c => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${c.name || 'Unnamed'}</span><span class="char-level">${c.class || '—'} ${c.level || 1}</span>`;
-        li.addEventListener('click', () => loadCharacter(c.id));
+        li.className = 'char-list-item';
+        li.innerHTML = '<span class="char-list-name">' + escapeHtml(c.name || 'Unnamed') + '</span><span class="char-level">' + escapeHtml(c.class || '—') + ' ' + (c.level || 1) + '</span><button type="button" class="btn-delete-char" title="Delete this character">Delete</button>';
+        li.addEventListener('click', (e) => { if (!e.target.classList.contains('btn-delete-char')) loadCharacter(c.id); });
+        li.querySelector('.btn-delete-char').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!confirm('Delete "' + (c.name || 'Unnamed') + '"? This cannot be undone.')) return;
+          try {
+            const delRes = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(c.id), { method: 'DELETE' });
+            if (!delRes.ok) throw new Error('Delete failed');
+            await renderCharacterList();
+          } catch (err) {
+            listEl.innerHTML = '<li class="char-list-empty" style="color:var(--danger)">Could not delete. Try again.</li>';
+          }
+        });
         listEl.appendChild(li);
       });
     }
-    document.getElementById('load-modal').classList.remove('hidden');
   } catch (err) {
-    listEl.innerHTML = '<li style="cursor:default;color:var(--danger)">Could not load list. Is the server running?</li>';
-    document.getElementById('load-modal').classList.remove('hidden');
+    listEl.innerHTML = '<li class="char-list-empty" style="color:var(--danger)">Could not load list. Is the server running?</li>';
   }
+}
+
+document.getElementById('btn-load')?.addEventListener('click', async () => {
+  await renderCharacterList();
+  document.getElementById('load-modal').classList.remove('hidden');
 });
 
 async function loadCharacter(id) {
