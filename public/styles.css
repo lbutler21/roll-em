@@ -651,6 +651,16 @@ body {
   white-space: pre-line;
 }
 
+.reference-credit {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.reference-credit a {
+  color: var(--accent);
+}
+
 @media (max-width: 600px) {
   .reference-content {
     grid-template-columns: 1fr;

@@ -31,15 +31,22 @@ The app is served from the same origin, so "Save to Server" and "Load" work with
 
 ## API
 
+### Characters
 - `GET /api/characters` — List all saved characters (id, name, class, level, updatedAt)
 - `GET /api/characters/:id` — Get one character by id
 - `POST /api/characters` — Create a new character (body: full character object)
 - `PUT /api/characters/:id` — Update a character
 - `DELETE /api/characters/:id` — Delete a character
 
-Data is stored in `data/characters.json` (created automatically).
+### Reference (Open5e – no credentials)
+- `GET /api/spells` — List spells (from Open5e)
+- `GET /api/equipment` — List weapons and armor
+- `GET /api/magicitems` — List magic items
+- `GET /api/rules` — List SRD rules sections
+
+Data is stored in `data/characters.json` (created automatically). Spells, equipment, magic items, and rules are fetched from the Open5e API and cached by the server. Everything is shown in-app (no new tabs); no account or credentials required.
 
 ## Tech
 
-- **Backend**: Node.js, Express, JSON file storage
+- **Backend**: Node.js 18+, Express, JSON file storage, Open5e API integration
 - **Frontend**: Vanilla HTML, CSS, and JavaScript (no build step)

@@ -33,7 +33,7 @@
         <span class="xp-next">LVL 2</span>
       </div>
       <div class="char-banner-actions">
-        <button type="button" id="btn-reference" class="btn btn-ghost" title="Spells, items & rules reference">Reference</button>
+        <button type="button" id="btn-reference" class="btn btn-ghost" title="Open D&D Beyond reference (spells, equipment, rules)">Reference</button>
         <button type="button" id="btn-new" class="btn btn-ghost">Blank</button>
         <button type="button" id="btn-load" class="btn btn-ghost">Load</button>
         <button type="button" id="btn-save" class="btn btn-ghost">Save</button>
@@ -424,7 +424,8 @@
         <h3>Reference Database</h3>
         <div class="reference-subnav">
           <button type="button" class="ref-sub-btn active" data-ref-cat="spells">Spells</button>
-          <button type="button" class="ref-sub-btn" data-ref-cat="items">Items</button>
+          <button type="button" class="ref-sub-btn" data-ref-cat="equipment">Equipment</button>
+          <button type="button" class="ref-sub-btn" data-ref-cat="magicitems">Magic Items</button>
           <button type="button" class="ref-sub-btn" data-ref-cat="rules">Rules</button>
         </div>
         <div class="reference-search">
@@ -476,6 +477,7 @@
           <div id="ref-list" class="ref-list"></div>
           <div id="ref-detail" class="ref-detail"></div>
         </div>
+        <p class="reference-credit">Reference data from Open5e (no account required).</p>
         <button type="button" id="btn-close-reference" class="btn btn-ghost">Close</button>
       </div>
     </div>
@@ -494,7 +496,6 @@
   <script src="builder-data.js"></script>
   <script src="descriptions.js"></script>
   <script src="feature-choices.js"></script>
-  <script src="data-reference.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

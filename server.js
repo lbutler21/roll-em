@@ -143,48 +143,149 @@ app.delete('/api/characters/:id', (req, res) => {
   }
 });
 
-// Fetch all 5e spells from Open5e API (cached)
+// ---------- Open5e API (no credentials required) ----------
+// https://api.open5e.com/ - 5e SRD & OGL content
+
 let spellsCache = null;
+let equipmentCache = null;
+let magicitemsCache = null;
+let rulesCache = null;
 
 async function fetchAllSpells() {
   if (spellsCache) return spellsCache;
   const all = [];
-  let url = 'https://api.open5e.com/spells/?limit=500';
-  while (url) {
-    const res = await fetch(url);
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const res = await fetch(`https://api.open5e.com/v1/spells/?limit=500&page=${page}`);
     if (!res.ok) throw new Error('Failed to fetch spells');
     const data = await res.json();
-    const level4OrLower = (data.results || []).filter(s => {
-      const lvl = s.level_int ?? (s.level === 'Cantrip' ? 0 : parseInt(String(s.level || '').replace(/\D/g, ''), 10));
-      return !isNaN(lvl) && lvl <= 4;
-    });
-    all.push(...level4OrLower);
-    url = data.next || null;
+    const results = data.results || [];
+    all.push(...results);
+    hasMore = !!data.next && results.length === 500;
+    page++;
   }
   spellsCache = all;
+  return all;
+}
+
+async function fetchAllEquipment() {
+  if (equipmentCache) return equipmentCache;
+  const list = [];
+  const [weaponsRes, armorRes] = await Promise.all([
+    fetch('https://api.open5e.com/v2/weapons/?limit=500'),
+    fetch('https://api.open5e.com/v2/armor/?limit=500')
+  ]);
+  if (!weaponsRes.ok || !armorRes.ok) throw new Error('Failed to fetch equipment');
+  const weapons = (await weaponsRes.json()).results || [];
+  const armor = (await armorRes.json()).results || [];
+  weapons.forEach(w => {
+    const dmgType = w.damage_type && (typeof w.damage_type === 'object' ? w.damage_type.name : w.damage_type);
+    const dmg = w.damage_dice && dmgType ? ` ${w.damage_dice} ${dmgType}` : '';
+    const props = (w.properties || []).map(p => p.property?.name).filter(Boolean).join(', ');
+    list.push({
+      name: w.name,
+      type: 'Weapon' + (w.is_simple ? ' (Simple)' : ' (Martial)'),
+      desc: (props ? props + '. ' : '') + (dmg ? dmg.trim() : '') || 'Weapon.'
+    });
+  });
+  armor.forEach(a => {
+    list.push({
+      name: a.name,
+      type: (a.category || 'Armor').charAt(0).toUpperCase() + (a.category || 'armor').slice(1) + ' Armor',
+      desc: (a.ac_display ? `AC ${a.ac_display}. ` : '') + (a.strength_score_required ? `Str ${a.strength_score_required} required. ` : '') + (a.grants_stealth_disadvantage ? 'Stealth disadvantage.' : '')
+    });
+  });
+  equipmentCache = list;
+  return list;
+}
+
+async function fetchAllMagicItems() {
+  if (magicitemsCache) return magicitemsCache;
+  const all = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const res = await fetch(`https://api.open5e.com/v1/magicitems/?limit=500&page=${page}`);
+    if (!res.ok) throw new Error('Failed to fetch magic items');
+    const data = await res.json();
+    const results = data.results || [];
+    all.push(...results.map(m => ({
+      name: m.name,
+      type: m.type || 'Magic Item',
+      rarity: m.rarity || '',
+      desc: m.desc || ''
+    })));
+    hasMore = !!data.next && results.length === 500;
+    page++;
+  }
+  magicitemsCache = all;
+  return all;
+}
+
+async function fetchAllRules() {
+  if (rulesCache) return rulesCache;
+  const all = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const res = await fetch(`https://api.open5e.com/v1/sections/?limit=100&page=${page}`);
+    if (!res.ok) throw new Error('Failed to fetch rules');
+    const data = await res.json();
+    const results = data.results || [];
+    all.push(...results.map(r => ({
+      title: r.name,
+      content: r.desc || ''
+    })));
+    hasMore = !!data.next && results.length === 100;
+    page++;
+  }
+  rulesCache = all;
   return all;
 }
 
 app.get('/api/spells', async (req, res) => {
   try {
     const spells = await fetchAllSpells();
-    const mapped = spells
-      .map(s => ({
-        name: s.name,
-        level: s.level_int ?? (s.level === 'Cantrip' ? 0 : parseInt(String(s.level).replace(/\D/g, ''), 10) || 0),
-        school: (s.school || '').charAt(0).toUpperCase() + (s.school || '').slice(1).toLowerCase(),
-        classes: (s.spell_lists || []).length ? s.spell_lists : (s.dnd_class || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
-        casting_time: s.casting_time || '',
-        range: s.range || '',
-        components: s.components || '',
-        duration: s.duration || '',
-        concentration: !!(s.concentration === 'yes' || s.requires_concentration),
-        desc: [s.desc, s.higher_level].filter(Boolean).join('\n\n')
-      }))
-      .filter(s => s.level <= 4);
+    const mapped = spells.map(s => ({
+      name: s.name,
+      level: s.level_int ?? (s.level === 'Cantrip' ? 0 : parseInt(String(s.level || '').replace(/\D/g, ''), 10) || 0),
+      school: (s.school || '').charAt(0).toUpperCase() + (s.school || '').slice(1).toLowerCase(),
+      classes: (s.spell_lists || []).length ? s.spell_lists : (s.dnd_class || '').split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
+      casting_time: s.casting_time || '',
+      range: s.range || '',
+      components: s.components || '',
+      duration: s.duration || '',
+      concentration: !!(s.concentration === 'yes' || s.requires_concentration),
+      desc: [s.desc, s.higher_level].filter(Boolean).join('\n\n')
+    }));
     res.json(mapped);
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to fetch spells' });
+  }
+});
+
+app.get('/api/equipment', async (req, res) => {
+  try {
+    res.json(await fetchAllEquipment());
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch equipment' });
+  }
+});
+
+app.get('/api/magicitems', async (req, res) => {
+  try {
+    res.json(await fetchAllMagicItems());
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch magic items' });
+  }
+});
+
+app.get('/api/rules', async (req, res) => {
+  try {
+    res.json(await fetchAllRules());
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch rules' });
   }
 });
 

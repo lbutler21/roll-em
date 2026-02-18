@@ -1035,8 +1035,19 @@ document.getElementById('feature-choices-modal')?.addEventListener('click', (e) 
   if (e.target.id === 'feature-choices-modal') e.target.classList.add('hidden');
 });
 
-/* ========== Reference Database ========== */
-let refState = { category: 'spells', selectedIndex: -1, spells: null, spellsLoading: false };
+/* ========== Reference Database (Open5e API – no new tabs, no credentials) ========== */
+let refState = {
+  category: 'spells',
+  selectedIndex: -1,
+  spells: null,
+  spellsLoading: false,
+  equipment: null,
+  equipmentLoading: false,
+  magicitems: null,
+  magicitemsLoading: false,
+  rules: null,
+  rulesLoading: false
+};
 
 function openReference() {
   refState.category = 'spells';
@@ -1065,10 +1076,64 @@ async function loadReferenceSpells() {
     if (!res.ok) throw new Error('Failed to load');
     refState.spells = await res.json();
   } catch (err) {
-    refState.spells = (typeof REFERENCE_SPELLS !== 'undefined' && REFERENCE_SPELLS.length) ? REFERENCE_SPELLS : [];
-    if (listEl && refState.spells.length === 0) listEl.innerHTML = '<div class="ref-loading ref-error">Could not load spells. Is the server running?</div>';
+    refState.spells = [];
+    if (listEl) listEl.innerHTML = '<div class="ref-loading ref-error">Could not load spells. Is the server running?</div>';
   }
   refState.spellsLoading = false;
+  renderReferenceList();
+  renderReferenceDetail();
+}
+
+async function loadReferenceEquipment() {
+  if (refState.equipment !== null || refState.equipmentLoading) return;
+  refState.equipmentLoading = true;
+  const listEl = document.getElementById('ref-list');
+  if (listEl) listEl.innerHTML = '<div class="ref-loading">Loading equipment…</div>';
+  try {
+    const res = await fetch(API_BASE + '/api/equipment');
+    if (!res.ok) throw new Error('Failed to load');
+    refState.equipment = await res.json();
+  } catch (err) {
+    refState.equipment = [];
+    if (listEl) listEl.innerHTML = '<div class="ref-loading ref-error">Could not load equipment.</div>';
+  }
+  refState.equipmentLoading = false;
+  renderReferenceList();
+  renderReferenceDetail();
+}
+
+async function loadReferenceMagicItems() {
+  if (refState.magicitems !== null || refState.magicitemsLoading) return;
+  refState.magicitemsLoading = true;
+  const listEl = document.getElementById('ref-list');
+  if (listEl) listEl.innerHTML = '<div class="ref-loading">Loading magic items…</div>';
+  try {
+    const res = await fetch(API_BASE + '/api/magicitems');
+    if (!res.ok) throw new Error('Failed to load');
+    refState.magicitems = await res.json();
+  } catch (err) {
+    refState.magicitems = [];
+    if (listEl) listEl.innerHTML = '<div class="ref-loading ref-error">Could not load magic items.</div>';
+  }
+  refState.magicitemsLoading = false;
+  renderReferenceList();
+  renderReferenceDetail();
+}
+
+async function loadReferenceRules() {
+  if (refState.rules !== null || refState.rulesLoading) return;
+  refState.rulesLoading = true;
+  const listEl = document.getElementById('ref-list');
+  if (listEl) listEl.innerHTML = '<div class="ref-loading">Loading rules…</div>';
+  try {
+    const res = await fetch(API_BASE + '/api/rules');
+    if (!res.ok) throw new Error('Failed to load');
+    refState.rules = await res.json();
+  } catch (err) {
+    refState.rules = [];
+    if (listEl) listEl.innerHTML = '<div class="ref-loading ref-error">Could not load rules.</div>';
+  }
+  refState.rulesLoading = false;
   renderReferenceList();
   renderReferenceDetail();
 }
@@ -1090,13 +1155,18 @@ function getReferenceData() {
     });
     return list;
   }
-  if (refState.category === 'items' && typeof REFERENCE_ITEMS !== 'undefined') {
-    let list = REFERENCE_ITEMS;
+  if (refState.category === 'equipment') {
+    let list = refState.equipment || [];
     if (q) list = list.filter(i => (i.name || '').toLowerCase().includes(q) || (i.type || '').toLowerCase().includes(q) || (i.desc || '').toLowerCase().includes(q));
     return list;
   }
-  if (refState.category === 'rules' && typeof REFERENCE_RULES !== 'undefined') {
-    let list = REFERENCE_RULES;
+  if (refState.category === 'magicitems') {
+    let list = refState.magicitems || [];
+    if (q) list = list.filter(i => (i.name || '').toLowerCase().includes(q) || (i.type || '').toLowerCase().includes(q) || (i.rarity || '').toLowerCase().includes(q) || (i.desc || '').toLowerCase().includes(q));
+    return list;
+  }
+  if (refState.category === 'rules') {
+    let list = refState.rules || [];
     if (q) list = list.filter(r => (r.title || '').toLowerCase().includes(q) || (r.content || '').toLowerCase().includes(q));
     return list;
   }
@@ -1107,6 +1177,9 @@ function renderReferenceList() {
   const listEl = document.getElementById('ref-list');
   if (!listEl) return;
   if (refState.category === 'spells' && refState.spellsLoading) return;
+  if (refState.category === 'equipment' && refState.equipmentLoading) return;
+  if (refState.category === 'magicitems' && refState.magicitemsLoading) return;
+  if (refState.category === 'rules' && refState.rulesLoading) return;
   const data = getReferenceData();
   listEl.innerHTML = '';
   data.forEach((item, i) => {
@@ -1131,7 +1204,8 @@ function renderReferenceList() {
     renderReferenceList();
     renderReferenceDetail();
   } else if (data.length === 0) {
-    listEl.innerHTML = '<div class="ref-loading">No spells match the filters.</div>';
+    const msg = refState.category === 'spells' ? 'No spells match the filters.' : refState.category === 'equipment' ? 'No equipment match.' : refState.category === 'magicitems' ? 'No magic items match.' : 'No rules match.';
+    listEl.innerHTML = '<div class="ref-loading">' + msg + '</div>';
     renderReferenceDetail();
   }
 }
@@ -1142,7 +1216,8 @@ function renderReferenceDetail() {
   const data = getReferenceData();
   const item = data[refState.selectedIndex];
   if (!item) {
-    detailEl.innerHTML = '<p class="ref-desc">' + (refState.category === 'spells' && refState.spellsLoading ? 'Loading…' : 'Select an entry from the list.') + '</p>';
+    const loading = (refState.category === 'spells' && refState.spellsLoading) || (refState.category === 'equipment' && refState.equipmentLoading) || (refState.category === 'magicitems' && refState.magicitemsLoading) || (refState.category === 'rules' && refState.rulesLoading);
+    detailEl.innerHTML = '<p class="ref-desc">' + (loading ? 'Loading…' : 'Select an entry from the list.') + '</p>';
     return;
   }
   if (refState.category === 'spells') {
@@ -1152,9 +1227,10 @@ function renderReferenceDetail() {
     detailEl.innerHTML = '<h4>' + escapeHtml(s.name) + '</h4>' +
       '<div class="ref-meta">' + escapeHtml(levelStr) + ' ' + escapeHtml(s.school || '') + ' · ' + escapeHtml(s.casting_time || '') + ' · ' + escapeHtml(s.range || '') + ' · ' + escapeHtml(s.components || '') + ' · ' + escapeHtml(s.duration || '') + (s.concentration ? ' (conc.)' : '') + (classList ? '<br>' + escapeHtml(classList) : '') + '</div>' +
       '<div class="ref-desc">' + escapeHtml(s.desc || '') + '</div>';
-  } else if (refState.category === 'items') {
+  } else if (refState.category === 'equipment' || refState.category === 'magicitems') {
+    const meta = item.rarity ? escapeHtml(item.type || '') + ' · ' + escapeHtml(item.rarity) : escapeHtml(item.type || '');
     detailEl.innerHTML = '<h4>' + escapeHtml(item.name) + '</h4>' +
-      '<div class="ref-meta">' + escapeHtml(item.type || '') + '</div>' +
+      (meta ? '<div class="ref-meta">' + meta + '</div>' : '') +
       '<div class="ref-desc">' + escapeHtml(item.desc || '') + '</div>';
   } else if (refState.category === 'rules') {
     detailEl.innerHTML = '<h4>' + escapeHtml(item.title) + '</h4>' +
@@ -1177,7 +1253,10 @@ document.querySelectorAll('.ref-sub-btn').forEach(btn => {
     btn.classList.add('active');
     const filtersEl = document.getElementById('reference-spell-filters');
     filtersEl?.classList.toggle('hidden', refState.category !== 'spells');
-    if (refState.category === 'spells' && !refState.spells) loadReferenceSpells();
+    if (refState.category === 'spells') loadReferenceSpells();
+    else if (refState.category === 'equipment') loadReferenceEquipment();
+    else if (refState.category === 'magicitems') loadReferenceMagicItems();
+    else if (refState.category === 'rules') loadReferenceRules();
     renderReferenceList();
     renderReferenceDetail();
   });
