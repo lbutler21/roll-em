@@ -73,6 +73,88 @@
   display: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
+/* Admin panel (only visible at #admin when logged in as admin) */
+.admin-panel {
+  min-height: 100vh;
+  background: var(--bg-dark);
+  padding: 1.5rem;
+}
+
+.admin-panel-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.admin-title {
+  font-family: var(--font-display);
+  color: #fff;
+  margin: 0 0 0.5rem;
+}
+
+.admin-link {
+  color: var(--accent-light);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+
+.admin-link:hover {
+  text-decoration: underline;
+}
+
+.admin-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--grey-border);
+}
+
+.admin-section h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--grey-border);
+}
+
+.admin-table th {
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.admin-table code {
+  font-size: 0.8rem;
+  background: rgba(0,0,0,0.06);
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+
+.admin-empty {
+  color: var(--ink-muted);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 body {
   margin: 0;
   background: var(--bg-dark);

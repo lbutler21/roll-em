@@ -53,7 +53,7 @@ Data is stored in `data/characters.json` (created automatically). Spells, equipm
 
 ## Admin backdoor (local use only)
 
-If the server is started with `ADMIN_BACKDOOR_SECRET` set, you can sign in as admin without a normal account. Not linked in the UI. To use: set `ADMIN_BACKDOOR_SECRET` to a secret string (e.g. in `.env` or when starting: `ADMIN_BACKDOOR_SECRET=your-secret npm start`), then open the app with `#backdoor` in the URL (e.g. `http://localhost:3000/#backdoor`), enter the same secret, and click Unlock. If the env var is not set, the backdoor is disabled (404).
+You can sign in as admin without a normal account. Not linked in the UI. Open the app with `#backdoor` in the URL (e.g. `http://localhost:3000/#backdoor`), enter the passcode **admin-login**, and click Unlock. To use a different passcode, set `ADMIN_BACKDOOR_SECRET` when starting the server.
 
 ---
 

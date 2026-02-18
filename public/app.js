@@ -18,6 +18,79 @@ async function checkAuth() {
   if (usernameEl) usernameEl.textContent = authUser ? 'Logged in as ' + (authUser.username || '') : '';
   const gated = document.querySelectorAll('.btn-gated-by-auth');
   gated.forEach(el => { el.disabled = !authUser; el.title = authUser ? (el.dataset.titleLoggedIn || '') : 'Log in to use this'; });
+  updateAdminPanelVisibility();
+}
+
+function isAdminView() {
+  return location.hash === '#admin' && authUser && authUser.id === 'admin';
+}
+
+function updateAdminPanelVisibility() {
+  const mainApp = document.getElementById('main-app');
+  const adminPanel = document.getElementById('admin-panel');
+  if (!mainApp || !adminPanel) return;
+  if (isAdminView()) {
+    mainApp.classList.add('hidden');
+    adminPanel.classList.remove('hidden');
+    loadAdminPanel();
+  } else {
+    mainApp.classList.remove('hidden');
+    adminPanel.classList.add('hidden');
+  }
+}
+
+async function loadAdminPanel() {
+  const usersEl = document.getElementById('admin-users-list');
+  const charsEl = document.getElementById('admin-characters-list');
+  if (!usersEl || !charsEl) return;
+  usersEl.textContent = 'Loading…';
+  charsEl.textContent = 'Loading…';
+  try {
+    const [usersRes, charsRes] = await Promise.all([
+      fetch(API_BASE + '/api/admin/users', API_CREDENTIALS),
+      fetch(API_BASE + '/api/admin/characters', API_CREDENTIALS)
+    ]);
+    if (!usersRes.ok || !charsRes.ok) {
+      if (usersRes.status === 403 || charsRes.status === 403) {
+        usersEl.textContent = 'Access denied.';
+        charsEl.textContent = '';
+        return;
+      }
+      usersEl.textContent = 'Failed to load.';
+      charsEl.textContent = '';
+      return;
+    }
+    const users = await usersRes.json();
+    const characters = await charsRes.json();
+    const userMap = {};
+    (users || []).forEach(u => { userMap[u.id] = u.username || u.id; });
+    userMap['admin'] = 'admin';
+
+    if (!users.length) usersEl.innerHTML = '<p class="admin-empty">No users yet.</p>';
+    else {
+      usersEl.innerHTML = '<table class="admin-table"><thead><tr><th>Username</th><th>User ID</th><th>Created</th></tr></thead><tbody>' +
+        users.map(u => '<tr><td>' + escapeHtml(u.username || '') + '</td><td><code>' + escapeHtml(u.id || '') + '</code></td><td>' + escapeHtml(u.createdAt || '') + '</td></tr>').join('') + '</tbody></table>';
+    }
+
+    if (!characters.length) charsEl.innerHTML = '<p class="admin-empty">No characters yet.</p>';
+    else {
+      charsEl.innerHTML = '<table class="admin-table"><thead><tr><th>Character</th><th>Class</th><th>Level</th><th>Owner</th><th>Updated</th><th></th></tr></thead><tbody>' +
+        characters.map(c => '<tr><td>' + escapeHtml(c.name || '') + '</td><td>' + escapeHtml(c.class || '—') + '</td><td>' + (c.level || 1) + '</td><td>' + escapeHtml(userMap[c.userId] || c.userId || '—') + '</td><td>' + escapeHtml(c.updatedAt || '') + '</td><td><button type="button" class="btn btn-ghost btn-sm btn-danger admin-delete-char" data-id="' + escapeHtml(c.id) + '">Delete</button></td></tr>').join('') + '</tbody></table>';
+      charsEl.querySelectorAll('.admin-delete-char').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Delete this character? This cannot be undone.')) return;
+          try {
+            const res = await fetch(API_BASE + '/api/admin/characters/' + encodeURIComponent(btn.dataset.id), { method: 'DELETE', ...API_CREDENTIALS });
+            if (res.ok) loadAdminPanel();
+            else alert('Could not delete.');
+          } catch (e) { alert('Network error.'); }
+        });
+      });
+    }
+  } catch (e) {
+    usersEl.textContent = 'Failed to load.';
+    charsEl.textContent = '';
+  }
 }
 
 function openAuthModal(mode) {
@@ -1473,7 +1546,15 @@ function showBackdoorIfHash() {
   }
 }
 showBackdoorIfHash();
-window.addEventListener('hashchange', showBackdoorIfHash);
+window.addEventListener('hashchange', () => {
+  showBackdoorIfHash();
+  updateAdminPanelVisibility();
+});
+document.getElementById('admin-back-to-sheet')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  location.hash = '';
+  updateAdminPanelVisibility();
+});
 document.getElementById('backdoor-submit')?.addEventListener('click', async () => {
   const secret = document.getElementById('backdoor-secret')?.value || '';
   const errEl = document.getElementById('backdoor-error');
@@ -1486,7 +1567,9 @@ document.getElementById('backdoor-submit')?.addEventListener('click', async () =
       body: JSON.stringify({ secret })
     });
     if (!res.ok) {
-      errEl.textContent = res.status === 404 ? 'Backdoor not enabled.' : 'Invalid secret.';
+      errEl.textContent = res.status === 404
+        ? 'Backdoor not available. Restart the server (npm start) and try again.'
+        : 'Invalid secret.';
       errEl.classList.remove('hidden');
       return;
     }

@@ -18,6 +18,21 @@
         <p id="backdoor-error" class="backdoor-error hidden"></p>
       </div>
     </div>
+    <div id="admin-panel" class="admin-panel hidden">
+      <div class="admin-panel-inner">
+        <h1 class="admin-title">Admin</h1>
+        <p><a href="#" id="admin-back-to-sheet" class="admin-link">← Back to character sheet</a></p>
+        <section class="admin-section">
+          <h2>Users</h2>
+          <div id="admin-users-list" class="admin-table-wrap">Loading…</div>
+        </section>
+        <section class="admin-section">
+          <h2>All characters</h2>
+          <div id="admin-characters-list" class="admin-table-wrap">Loading…</div>
+        </section>
+      </div>
+    </div>
+    <div id="main-app">
     <!-- Character banner -->
     <header class="char-banner">
       <div class="char-banner-main">
@@ -524,6 +539,7 @@
         <ul id="character-list" class="character-list"></ul>
         <button type="button" id="btn-close-load" class="btn btn-ghost">Close</button>
       </div>
+    </div>
     </div>
   </div>
 

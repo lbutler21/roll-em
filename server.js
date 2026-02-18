@@ -147,16 +147,70 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-// Admin backdoor: only exists when ADMIN_BACKDOOR_SECRET is set. Not linked in UI.
-// Use by visiting the app with hash #backdoor and entering the secret, or POST from console.
+// Admin backdoor: not linked in UI. Use by visiting the app with hash #backdoor.
+// Passcode is "admin-login" (or override with ADMIN_BACKDOOR_SECRET env).
 app.post('/api/auth/backdoor', (req, res) => {
-  const secret = process.env.ADMIN_BACKDOOR_SECRET;
-  if (!secret) return res.status(404).json({ error: 'Not available' });
+  const secret = process.env.ADMIN_BACKDOOR_SECRET || 'admin-login';
   const provided = (req.body && req.body.secret) ? String(req.body.secret) : '';
   if (provided !== secret) return res.status(401).json({ error: 'Invalid' });
   req.session.userId = 'admin';
   req.session.username = 'admin';
   res.json({ id: 'admin', username: 'admin' });
+});
+
+// ---------- Admin-only (no UI link; access via #admin when logged in as admin) ----------
+function requireAdmin(req, res, next) {
+  if (req.session && req.session.userId === 'admin') return next();
+  return res.status(403).json({ error: 'Admin only' });
+}
+
+app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const users = readUsers();
+    res.json(users.map(u => ({ id: u.id, username: u.username, createdAt: u.createdAt })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/characters', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const characters = readCharacters();
+    res.json(characters.map(c => ({
+      id: c.id,
+      name: c.name || 'Unnamed',
+      class: c.class,
+      level: c.level,
+      userId: c.userId,
+      updatedAt: c.updatedAt
+    })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/admin/characters/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const characters = readCharacters();
+    const c = characters.find(x => x.id === req.params.id);
+    if (!c) return res.status(404).json({ error: 'Character not found' });
+    res.json(c);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/characters/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const characters = readCharacters();
+    const idx = characters.findIndex(x => x.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'Character not found' });
+    characters.splice(idx, 1);
+    writeCharacters(characters);
+    res.json({ deleted: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ---------- Characters (require login; scoped to user) ----------
