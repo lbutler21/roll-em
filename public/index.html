@@ -11,6 +11,13 @@
 </head>
 <body>
   <div class="app">
+    <div id="backdoor-overlay" class="backdoor-overlay hidden">
+      <div class="backdoor-box">
+        <label>Secret <input type="password" id="backdoor-secret" placeholder="Enter backdoor secret" autocomplete="off" /></label>
+        <button type="button" id="backdoor-submit" class="btn btn-primary">Unlock</button>
+        <p id="backdoor-error" class="backdoor-error hidden"></p>
+      </div>
+    </div>
     <!-- Character banner -->
     <header class="char-banner">
       <div class="char-banner-main">

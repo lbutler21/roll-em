@@ -1460,3 +1460,41 @@ updateBanner();
 
 updateModifiers();
 checkAuth();
+
+function showBackdoorIfHash() {
+  const overlay = document.getElementById('backdoor-overlay');
+  if (!overlay) return;
+  if (location.hash === '#backdoor') {
+    overlay.classList.remove('hidden');
+    document.getElementById('backdoor-secret').value = '';
+    document.getElementById('backdoor-error').classList.add('hidden');
+  } else {
+    overlay.classList.add('hidden');
+  }
+}
+showBackdoorIfHash();
+window.addEventListener('hashchange', showBackdoorIfHash);
+document.getElementById('backdoor-submit')?.addEventListener('click', async () => {
+  const secret = document.getElementById('backdoor-secret')?.value || '';
+  const errEl = document.getElementById('backdoor-error');
+  errEl.classList.add('hidden');
+  try {
+    const res = await fetch(API_BASE + '/api/auth/backdoor', {
+      method: 'POST',
+      ...API_CREDENTIALS,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret })
+    });
+    if (!res.ok) {
+      errEl.textContent = res.status === 404 ? 'Backdoor not enabled.' : 'Invalid secret.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    location.hash = '';
+    document.getElementById('backdoor-overlay').classList.add('hidden');
+    checkAuth();
+  } catch (e) {
+    errEl.textContent = 'Network error.';
+    errEl.classList.remove('hidden');
+  }
+});

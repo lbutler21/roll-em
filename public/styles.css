@@ -21,6 +21,58 @@
   box-sizing: border-box;
 }
 
+.backdoor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.backdoor-overlay.hidden {
+  display: none;
+}
+
+.backdoor-box {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  min-width: 260px;
+}
+
+.backdoor-box label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.backdoor-box input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+}
+
+.backdoor-box .btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.backdoor-error {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.backdoor-error.hidden {
+  display: none;
+}
+
 body {
   margin: 0;
   background: var(--bg-dark);

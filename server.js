@@ -147,6 +147,18 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// Admin backdoor: only exists when ADMIN_BACKDOOR_SECRET is set. Not linked in UI.
+// Use by visiting the app with hash #backdoor and entering the secret, or POST from console.
+app.post('/api/auth/backdoor', (req, res) => {
+  const secret = process.env.ADMIN_BACKDOOR_SECRET;
+  if (!secret) return res.status(404).json({ error: 'Not available' });
+  const provided = (req.body && req.body.secret) ? String(req.body.secret) : '';
+  if (provided !== secret) return res.status(401).json({ error: 'Invalid' });
+  req.session.userId = 'admin';
+  req.session.username = 'admin';
+  res.json({ id: 'admin', username: 'admin' });
+});
+
 // ---------- Characters (require login; scoped to user) ----------
 app.get('/api/characters', requireAuth, (req, res) => {
   try {

@@ -50,3 +50,60 @@ Data is stored in `data/characters.json` (created automatically). Spells, equipm
 
 - **Backend**: Node.js 18+, Express, JSON file storage, Open5e API integration
 - **Frontend**: Vanilla HTML, CSS, and JavaScript (no build step)
+
+## Admin backdoor (local use only)
+
+If the server is started with `ADMIN_BACKDOOR_SECRET` set, you can sign in as admin without a normal account. Not linked in the UI. To use: set `ADMIN_BACKDOOR_SECRET` to a secret string (e.g. in `.env` or when starting: `ADMIN_BACKDOOR_SECRET=your-secret npm start`), then open the app with `#backdoor` in the URL (e.g. `http://localhost:3000/#backdoor`), enter the same secret, and click Unlock. If the env var is not set, the backdoor is disabled (404).
+
+---
+
+## Push to production (no domain yet)
+
+This app is a **Node.js + Express** backend with **vanilla HTML/CSS/JS** frontend and file-based storage. A standard, easy host for this is **Railway** (or **Render**). Below: get the app live first; you can connect your GoDaddy domain later.
+
+### Step 1: Put your code on GitHub
+
+1. Go to [github.com](https://github.com) and sign in (or create an account).
+2. Click the **+** (top right) → **New repository**.
+3. Name it (e.g. `dice-proj`), leave it **Public**, do **not** check “Add a README”. Click **Create repository**.
+4. On your computer, open **PowerShell** in your project folder (`c:\Users\tachy\OneDrive\Desktop\dice_proj`).
+5. Run these commands one by one (replace `YOUR_USERNAME` and `dice_proj` with your GitHub username and repo name if different):
+
+   ```powershell
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USERNAME/dice_proj.git
+   git push -u origin main
+   ```
+
+   If Git asks for login, use your GitHub username and a **Personal Access Token** as the password (GitHub → Settings → Developer settings → Personal access tokens → Generate new token).
+
+### Step 2: Deploy on Railway
+
+1. Go to [railway.app](https://railway.app) and sign in (e.g. “Login with GitHub”).
+2. Click **New Project**.
+3. Choose **Deploy from GitHub repo**.
+4. Select your repo (e.g. `dice_proj`). If you don’t see it, click **Configure GitHub App** and allow Railway to see the repo, then try again.
+5. Railway will detect Node.js and deploy. Wait until the status is **Success** / **Active**.
+6. Click your service (the box with your app name), then open the **Variables** tab.
+7. Add a variable:
+   - **Name:** `SESSION_SECRET`
+   - **Value:** any long random string (e.g. copy from [randomkeygen.com](https://randomkeygen.com) “CodeIgniter Encryption Keys”). This keeps sessions secure in production.
+8. Railway will redeploy automatically. When it’s done, open the **Settings** tab and find **Networking** → **Generate Domain**. Click it.
+9. You’ll get a URL like `https://your-app-name.up.railway.app`. Open it in your browser — your app is live.
+
+### Step 3: (Optional) Same thing on Render instead of Railway
+
+If you prefer **Render**:
+
+1. Go to [render.com](https://render.com) and sign in with GitHub.
+2. **New** → **Web Service**.
+3. Connect your GitHub repo (`dice_proj`).
+4. **Environment:** Node. **Build command:** `npm install`. **Start command:** `npm start`.
+5. Under **Environment**, add: **Key** `SESSION_SECRET`, **Value** (a long random string).
+6. Click **Create Web Service**. When it’s finished, use the URL Render gives you (e.g. `https://dice-proj.onrender.com`).
+
+---
+
+**Summary:** Your stack is Node.js + Express + vanilla frontend. Easiest path: push the project to GitHub, then deploy with **Railway** (or Render). Set `SESSION_SECRET` in the host’s environment. You’ll get a default URL; connecting your GoDaddy domain can be done later from the host’s dashboard.
