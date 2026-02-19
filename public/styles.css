@@ -15,6 +15,46 @@
   --radius: 4px;
   --font-display: 'Cinzel', Georgia, serif;
   --font-body: 'Source Sans 3', -apple-system, sans-serif;
+  /* Banner/surface text (dark theme) */
+  --banner-text: #fff;
+  --banner-text-muted: rgba(255, 255, 255, 0.75);
+  --banner-text-dim: rgba(255, 255, 255, 0.6);
+  --banner-border: rgba(255, 255, 255, 0.08);
+  --xp-track-bg: rgba(0, 0, 0, 0.3);
+  --btn-ghost-banner: rgba(255, 255, 255, 0.8);
+  --btn-ghost-banner-border: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] {
+  --bg-dark: #eaeaea;
+  --bg-darker: #d4d4d4;
+  --card-bg: #fff;
+  --grey-border: #ccc;
+  --shadow: rgba(0, 0, 0, 0.08);
+  --banner-text: #1a1a1a;
+  --banner-text-muted: #444;
+  --banner-text-dim: #555;
+  --banner-border: rgba(0, 0, 0, 0.08);
+  --xp-track-bg: rgba(0, 0, 0, 0.12);
+  --btn-ghost-banner: #333;
+  --btn-ghost-banner-border: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .btn-banner:hover {
+  background: rgba(196, 30, 58, 0.12);
+}
+
+[data-theme="light"] .char-banner-actions .btn-ghost:hover {
+  background: rgba(196, 30, 58, 0.12);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-theme-toggle {
+  padding: 0.35rem 0.6rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  min-width: 2rem;
 }
 
 * {
@@ -85,6 +125,15 @@
   justify-content: center;
   background: var(--bg-dark);
   padding: 1.5rem;
+  position: relative;
+}
+
+.landing-theme-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 1.1rem;
 }
 
 .landing-inner {
@@ -96,13 +145,13 @@
   font-family: var(--font-display);
   font-size: 1.75rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--banner-text);
   margin: 0 0 0.5rem;
   letter-spacing: 0.02em;
 }
 
 .landing-subtitle {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--banner-text-muted);
   font-size: 1rem;
   margin: 0 0 2rem;
 }
@@ -224,7 +273,7 @@ body {
   background: var(--bg-darker);
   padding: 1rem 1.25rem;
   margin-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--banner-border);
 }
 
 .char-banner-main {
@@ -248,14 +297,14 @@ body {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.5rem;
-  color: #fff;
+  color: var(--banner-text);
   margin: 0 0 0.15rem;
   letter-spacing: 0.02em;
 }
 
 .char-subtitle {
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--banner-text-muted);
   margin: 0;
 }
 
@@ -287,13 +336,13 @@ body {
 
 .xp-label, .xp-next {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.6);
+  color: var(--banner-text-dim);
 }
 
 .xp-progress {
   flex: 1;
   height: 6px;
-  background: rgba(0,0,0,0.3);
+  background: var(--xp-track-bg);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -312,19 +361,19 @@ body {
 }
 
 .char-banner-actions .btn-ghost {
-  color: rgba(255,255,255,0.8);
-  border-color: rgba(255,255,255,0.2);
+  color: var(--btn-ghost-banner);
+  border-color: var(--btn-ghost-banner-border);
 }
 
 .char-banner-actions .btn-ghost:hover {
-  color: #fff;
+  color: var(--banner-text);
   border-color: var(--accent);
   background: rgba(196, 30, 58, 0.1);
 }
 
 .save-status {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.6);
+  color: var(--banner-text-dim);
   margin-left: 0.25rem;
 }
 
@@ -340,7 +389,7 @@ body {
 
 .auth-user span {
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.85);
+  color: var(--banner-text);
 }
 
 .btn-gated-by-auth:disabled {

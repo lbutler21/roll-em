@@ -1,6 +1,31 @@
 const API_BASE = '';
 const API_CREDENTIALS = { credentials: 'include' };
 
+const THEME_KEY = 'dice-proj-theme';
+
+function getTheme() {
+  try {
+    const t = localStorage.getItem(THEME_KEY);
+    if (t === 'light' || t === 'dark') return t;
+  } catch (e) {}
+  return 'dark';
+}
+
+function setTheme(theme) {
+  theme = theme === 'light' ? 'light' : 'dark';
+  if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  const icon = theme === 'light' ? '🌙' : '☀';
+  const title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  ['btn-theme-toggle', 'landing-theme-toggle'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) { btn.textContent = icon; btn.title = title; }
+  });
+}
+
+setTheme(getTheme());
+
 let authUser = null;
 let showSheetWithoutAuth = false;
 
@@ -726,6 +751,11 @@ document.getElementById('manage-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'manage-modal') e.target.classList.add('hidden');
 });
 
+function toggleTheme() {
+  setTheme(getTheme() === 'light' ? 'dark' : 'light');
+}
+document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
+document.getElementById('landing-theme-toggle')?.addEventListener('click', toggleTheme);
 document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
 document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
 document.getElementById('btn-start-now')?.addEventListener('click', () => {
