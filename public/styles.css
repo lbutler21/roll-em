@@ -77,6 +77,54 @@
   display: none !important;
 }
 
+/* Landing page (when not logged in, until "Start now" or log in) */
+.landing-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  padding: 1.5rem;
+}
+
+.landing-inner {
+  text-align: center;
+  max-width: 420px;
+}
+
+.landing-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.landing-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1rem;
+  margin: 0 0 2rem;
+}
+
+.btn-landing-cta {
+  display: inline-block;
+  padding: 0.85rem 2rem;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.landing-auth-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.landing-auth-links .btn {
+  font-size: 0.95rem;
+}
+
 /* Admin panel (only visible at #admin when logged in as admin) */
 .admin-panel {
   min-height: 100vh;
@@ -1590,4 +1638,65 @@ textarea {
 .dnd-tooltip.visible {
   opacity: 1;
   visibility: visible;
+}
+
+/* Print / Save as PDF: hide UI chrome, show only the character sheet */
+@media print {
+  .no-print,
+  .backdoor-overlay,
+  .admin-panel,
+  .landing-page,
+  .char-banner,
+  .modal,
+  .builder-modal {
+    display: none !important;
+  }
+
+  body,
+  .app,
+  #main-app {
+    background: #fff;
+    max-width: none;
+  }
+
+  .sheet {
+    padding: 0;
+    gap: 0.5rem;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+
+  /* Keep card backgrounds when printing (e.g. for readability) */
+  .card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide dice roller, roll buttons, and in-sheet actions for a cleaner PDF */
+  .card-dice,
+  .skill-roll,
+  .quick-roll,
+  .ability-roll,
+  .btn-roll-dice,
+  .feature-choices-btn {
+    display: none !important;
+  }
+
+  /* Show all tab content when printing so nothing is missing */
+  .tab-pane {
+    display: block !important;
+  }
+  .tab-pane.hidden {
+    display: block !important;
+  }
+  .tabs-nav,
+  .tab-btn,
+  .background-subnav,
+  .bg-sub-btn {
+    display: none !important;
+  }
 }

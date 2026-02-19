@@ -32,7 +32,18 @@
         </section>
       </div>
     </div>
-    <div id="main-app">
+    <div id="landing-page" class="landing-page">
+      <div class="landing-inner">
+        <h1 class="landing-title">5e D&D Character Sheet</h1>
+        <p class="landing-subtitle">Create and manage your characters</p>
+        <button type="button" id="btn-start-now" class="btn btn-primary btn-landing-cta">Start now</button>
+        <div class="landing-auth-links">
+          <button type="button" id="landing-btn-login" class="btn btn-ghost">Log in</button>
+          <button type="button" id="landing-btn-register" class="btn btn-ghost">Register</button>
+        </div>
+      </div>
+    </div>
+    <div id="main-app" class="hidden">
     <!-- Character banner -->
     <header class="char-banner">
       <div class="char-banner-main">
@@ -67,6 +78,7 @@
         <button type="button" id="btn-new" class="btn btn-ghost">Blank</button>
         <button type="button" id="btn-load" class="btn btn-ghost btn-gated-by-auth" title="Log in to load characters" data-title-logged-in="Load character">Load</button>
         <button type="button" id="btn-save" class="btn btn-ghost btn-gated-by-auth" title="Log in to save" data-title-logged-in="Save to server">Save</button>
+        <button type="button" id="btn-save-pdf" class="btn btn-ghost no-print" title="Print or save as PDF">Save as PDF</button>
         <span id="save-status" class="save-status"></span>
       </div>
     </header>

@@ -2,6 +2,7 @@ const API_BASE = '';
 const API_CREDENTIALS = { credentials: 'include' };
 
 let authUser = null;
+let showSheetWithoutAuth = false;
 
 async function checkAuth() {
   try {
@@ -18,24 +19,31 @@ async function checkAuth() {
   if (usernameEl) usernameEl.textContent = authUser ? 'Logged in as ' + (authUser.username || '') : '';
   const gated = document.querySelectorAll('.btn-gated-by-auth');
   gated.forEach(el => { el.disabled = !authUser; el.title = authUser ? (el.dataset.titleLoggedIn || '') : 'Log in to use this'; });
-  updateAdminPanelVisibility();
+  updateLandingAndAppVisibility();
 }
 
 function isAdminView() {
   return location.hash === '#admin' && authUser && authUser.id === 'admin';
 }
 
-function updateAdminPanelVisibility() {
+function updateLandingAndAppVisibility() {
   const mainApp = document.getElementById('main-app');
   const adminPanel = document.getElementById('admin-panel');
+  const landing = document.getElementById('landing-page');
   if (!mainApp || !adminPanel) return;
   if (isAdminView()) {
     mainApp.classList.add('hidden');
     adminPanel.classList.remove('hidden');
+    if (landing) landing.classList.add('hidden');
     loadAdminPanel();
-  } else {
+  } else if (authUser || showSheetWithoutAuth) {
     mainApp.classList.remove('hidden');
     adminPanel.classList.add('hidden');
+    if (landing) landing.classList.add('hidden');
+  } else {
+    mainApp.classList.add('hidden');
+    adminPanel.classList.add('hidden');
+    if (landing) landing.classList.remove('hidden');
   }
 }
 
@@ -720,8 +728,17 @@ document.getElementById('manage-modal')?.addEventListener('click', (e) => {
 
 document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
 document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
+document.getElementById('btn-start-now')?.addEventListener('click', () => {
+  showSheetWithoutAuth = true;
+  resetToBlankCharacter();
+  updateLandingAndAppVisibility();
+});
+document.getElementById('landing-btn-login')?.addEventListener('click', () => openAuthModal('login'));
+document.getElementById('landing-btn-register')?.addEventListener('click', () => openAuthModal('register'));
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
   await fetch(API_BASE + '/api/auth/logout', { method: 'POST', ...API_CREDENTIALS });
+  showSheetWithoutAuth = false;
+  resetToBlankCharacter();
   checkAuth();
 });
 document.getElementById('auth-form')?.addEventListener('submit', async (e) => {
@@ -820,7 +837,7 @@ document.querySelectorAll('.bg-sub-btn').forEach(btn => {
   if (el) el.addEventListener('change', updateBanner);
 });
 
-document.getElementById('btn-new')?.addEventListener('click', () => {
+function resetToBlankCharacter() {
   state.characterId = null;
   loadCharacterIntoForm({
     name: '',
@@ -840,8 +857,12 @@ document.getElementById('btn-new')?.addEventListener('click', () => {
   });
   setValue('customFeatures', '');
   state.featureChoices = {};
-  document.getElementById('save-status').textContent = '';
-  document.getElementById('save-status').className = 'save-status';
+  const statusEl = document.getElementById('save-status');
+  if (statusEl) { statusEl.textContent = ''; statusEl.className = 'save-status'; }
+}
+
+document.getElementById('btn-new')?.addEventListener('click', () => {
+  resetToBlankCharacter();
 });
 
 /* ========== Character Builder (D&D Beyond style) ========== */
@@ -1152,6 +1173,9 @@ async function saveCharacter() {
 }
 
 document.getElementById('btn-save')?.addEventListener('click', saveCharacter);
+document.getElementById('btn-save-pdf')?.addEventListener('click', () => {
+  window.print();
+});
 
 async function renderCharacterList() {
   const listEl = document.getElementById('character-list');
@@ -1556,12 +1580,12 @@ function showBackdoorIfHash() {
 showBackdoorIfHash();
 window.addEventListener('hashchange', () => {
   showBackdoorIfHash();
-  updateAdminPanelVisibility();
+  updateLandingAndAppVisibility();
 });
 document.getElementById('admin-back-to-sheet')?.addEventListener('click', (e) => {
   e.preventDefault();
   location.hash = '';
-  updateAdminPanelVisibility();
+  updateLandingAndAppVisibility();
 });
 document.getElementById('backdoor-submit')?.addEventListener('click', async () => {
   const secret = document.getElementById('backdoor-secret')?.value || '';
