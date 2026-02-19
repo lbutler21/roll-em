@@ -53,7 +53,13 @@ Data is stored in `data/characters.json` (created automatically). Spells, equipm
 
 ## Admin backdoor (local use only)
 
-You can sign in as admin without a normal account. Not linked in the UI. Open the app with `#backdoor` in the URL (e.g. `http://localhost:3000/#backdoor`), enter the passcode **admin-login**, and click Unlock. To use a different passcode, set `ADMIN_BACKDOOR_SECRET` when starting the server.
+You can sign in as admin without a normal account. Not linked in the UI.
+
+1. Open the app with **`#backdoor`** in the URL (e.g. `http://localhost:3000/#backdoor`).
+2. Enter the passcode **admin-login** and click Unlock.
+3. You are taken to the **admin panel** (Users and All characters). To open it again later, add **`#admin`** to the URL (e.g. `http://localhost:3000/#admin`) while still logged in as admin.
+
+To use a different passcode, set `ADMIN_BACKDOOR_SECRET` when starting the server.
 
 ---
 

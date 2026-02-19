@@ -97,6 +97,7 @@ function requireAuth(req, res, next) {
 
 app.get('/api/auth/me', (req, res) => {
   if (req.session && req.session.userId) {
+    if (req.session.userId === 'admin') return res.json({ id: 'admin', username: 'admin' });
     const users = readUsers();
     const user = users.find(u => u.id === req.session.userId);
     if (user) return res.json({ id: user.id, username: user.username });

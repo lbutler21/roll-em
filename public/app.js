@@ -1573,9 +1573,9 @@ document.getElementById('backdoor-submit')?.addEventListener('click', async () =
       errEl.classList.remove('hidden');
       return;
     }
-    location.hash = '';
     document.getElementById('backdoor-overlay').classList.add('hidden');
-    checkAuth();
+    location.hash = 'admin';
+    await checkAuth();
   } catch (e) {
     errEl.textContent = 'Network error.';
     errEl.classList.remove('hidden');
