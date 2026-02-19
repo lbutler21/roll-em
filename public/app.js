@@ -345,6 +345,29 @@ function hideTooltip() {
   if (tip) tip.classList.remove('visible');
 }
 
+function getSpellTooltipText(spell) {
+  if (!spell) return '';
+  const parts = [];
+  const levelStr = spell.level === 0 ? 'Cantrip' : (spell.level === 1 ? '1st' : spell.level === 2 ? '2nd' : spell.level === 3 ? '3rd' : (spell.level || 0) + 'th');
+  parts.push(levelStr + (spell.school ? ' • ' + spell.school : ''));
+  if (spell.casting_time) parts.push('Casting time: ' + spell.casting_time);
+  if (spell.range) parts.push('Range: ' + spell.range);
+  if (spell.duration) parts.push('Duration: ' + spell.duration);
+  const desc = (spell.desc || '').trim();
+  const maxDesc = 600;
+  const descShort = desc.length > maxDesc ? desc.slice(0, maxDesc) + '…' : desc;
+  if (descShort) parts.push(descShort);
+  return parts.join('\n\n');
+}
+
+function showSpellTooltip(e) {
+  const name = (e.target.dataset.spellName || '').trim();
+  if (!name || !sheetSpellsCache) return;
+  const spell = sheetSpellsCache.find(s => (s.name || '').trim() === name);
+  const text = getSpellTooltipText(spell);
+  if (text) showTooltip(e.target, text);
+}
+
 function toggleCustomInputs() {
   ['race', 'class', 'background'].forEach(field => {
     const sel = document.getElementById(field);
@@ -373,10 +396,83 @@ const SKILL_ABILITY_MAP = {
   stealth: 'dex', survival: 'wis'
 };
 
+const SPELLCASTING_CLASSES = ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'warlock', 'wizard'];
+
+// 5e spells known by level (PHB/SRD). Index 0 = level 1.
+const SPELLS_KNOWN_BARD = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22];
+const SPELLS_KNOWN_RANGER = [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11]; // 0 at level 1 (no spells yet)
+const SPELLS_KNOWN_SORCERER = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15];
+const SPELLS_KNOWN_WARLOCK = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15];
+const SPELLS_KNOWN_ARTIFICER = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11];
+
+// 5e full caster spell slots by character level [1st, 2nd, 3rd, ... 9th]. Index 0 = level 1.
+const SPELL_SLOTS_FULL = [
+  [2], [3], [4,2], [4,3], [4,3,2], [4,3,3], [4,3,3,1], [4,3,3,2], [4,3,3,3,1], [4,3,3,3,2],
+  [4,3,3,3,2,1], [4,3,3,3,2,1], [4,3,3,3,2,1,1], [4,3,3,3,2,1,1], [4,3,3,3,2,1,1,1], [4,3,3,3,2,1,1,1],
+  [4,3,3,3,2,1,1,1,1], [4,3,3,3,3,1,1,1,1], [4,3,3,3,3,2,1,1,1], [4,3,3,3,3,2,2,1,1,1]
+];
+
+function getSpellSlotsText(classId, level) {
+  const lvl = Math.min(20, Math.max(1, level || 1));
+  if (!SPELLCASTING_CLASSES.includes(classId)) return '';
+  if (classId === 'warlock') {
+    const count = lvl >= 11 ? 3 : lvl >= 2 ? 2 : 1;
+    const slotLevel = lvl >= 9 ? 5 : lvl >= 7 ? 4 : lvl >= 5 ? 3 : lvl >= 3 ? 2 : 1;
+    const ord = slotLevel === 1 ? '1st' : slotLevel === 2 ? '2nd' : slotLevel === 3 ? '3rd' : slotLevel === 4 ? '4th' : '5th';
+    return count + ' slot' + (count !== 1 ? 's' : '') + ' (' + ord + ' level)';
+  }
+  const halfCasters = ['paladin', 'ranger', 'artificer'];
+  const slotLevel = halfCasters.includes(classId) ? Math.floor(lvl / 2) : lvl;
+  if (slotLevel < 1) return '—';
+  const row = SPELL_SLOTS_FULL[Math.min(slotLevel, 20) - 1];
+  if (!row || !row.length) return '—';
+  const parts = [];
+  ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'].forEach((ord, i) => {
+    if (row[i] && row[i] > 0) parts.push(row[i] + '×' + ord);
+  });
+  return parts.length ? parts.join(' ') : '—';
+}
+
+function getSpellLimit(classId, level, getAbilityMod) {
+  const lvl = Math.min(20, Math.max(1, level || 1));
+  const idx = lvl - 1;
+  switch (classId) {
+    case 'bard':
+      return { limit: SPELLS_KNOWN_BARD[idx] ?? 0, label: 'Spells known', type: 'known' };
+    case 'ranger':
+      return { limit: SPELLS_KNOWN_RANGER[idx] ?? 0, label: 'Spells known', type: 'known' };
+    case 'sorcerer':
+      return { limit: SPELLS_KNOWN_SORCERER[idx] ?? 0, label: 'Spells known', type: 'known' };
+    case 'warlock':
+      return { limit: SPELLS_KNOWN_WARLOCK[idx] ?? 0, label: 'Spells known', type: 'known' };
+    case 'artificer':
+      return { limit: SPELLS_KNOWN_ARTIFICER[idx] ?? 0, label: 'Spells known', type: 'known' };
+    case 'cleric':
+    case 'druid': {
+      const mod = getAbilityMod('wis');
+      const limit = Math.max(1, lvl + mod);
+      return { limit, label: 'Spells prepared', type: 'prepared' };
+    }
+    case 'paladin': {
+      const mod = getAbilityMod('cha');
+      const limit = Math.max(1, Math.floor(lvl / 2) + mod);
+      return { limit, label: 'Spells prepared', type: 'prepared' };
+    }
+    case 'wizard': {
+      const mod = getAbilityMod('int');
+      const limit = Math.max(1, lvl + mod);
+      return { limit, label: 'Spells prepared', type: 'prepared' };
+    }
+    default:
+      return { limit: 0, label: 'Spells', type: 'known' };
+  }
+}
+
 const state = {
   characterId: null,
   character: null,
-  featureChoices: {}
+  featureChoices: {},
+  spellsKnown: []
 };
 
 function getCharacterFromForm() {
@@ -437,6 +533,7 @@ function getCharacterFromForm() {
     },
     attacks: getValue('attacks'),
     equipment: getValue('equipment'),
+    spells: [...(state.spellsKnown || [])],
     customFeatures: getValue('customFeatures'),
     featuresTraits: getValue('customFeatures'),
     featureChoices: { ...state.featureChoices },
@@ -520,6 +617,7 @@ function loadCharacterIntoForm(data) {
   setRaceClassBackgroundFromData(data);
   setValue('customFeatures', data.customFeatures != null ? data.customFeatures : (data.featuresTraits || ''));
   state.featureChoices = data.featureChoices && typeof data.featureChoices === 'object' ? { ...data.featureChoices } : {};
+  state.spellsKnown = Array.isArray(data.spells) ? [...data.spells] : [];
 
   const abilities = data.abilities || {};
   ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => {
@@ -701,7 +799,10 @@ function rollSkill(skill, ability) {
 }
 
 document.querySelectorAll('.ability-score').forEach(input => {
-  input.addEventListener('input', updateModifiers);
+  input.addEventListener('input', () => {
+    updateModifiers();
+    renderSpellsTab();
+  });
 });
 document.querySelectorAll('[id^="save-"]').forEach(cb => {
   if (cb.type === 'checkbox') cb.addEventListener('change', updateModifiers);
@@ -839,7 +940,7 @@ document.getElementById('btn-delete-character')?.addEventListener('click', async
   }
 });
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const tabId = btn.dataset.tab;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
@@ -847,7 +948,23 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     const pane = document.getElementById('tab-' + tabId);
     if (pane) { pane.classList.remove('hidden'); }
     if (tabId === 'background') updateBackgroundDisplay();
+    if (tabId === 'spells') {
+      await loadSpellsForSheet();
+      renderSpellsTab();
+    }
   });
+});
+document.getElementById('spells-search')?.addEventListener('input', () => renderSpellsTab());
+document.getElementById('spells-search')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+document.getElementById('spells-available-toggle')?.addEventListener('click', () => {
+  const body = document.getElementById('spells-available-body');
+  const btn = document.getElementById('spells-available-toggle');
+  const icon = btn?.querySelector('.spells-collapse-icon');
+  if (!body || !btn) return;
+  const isOpen = !body.classList.contains('spells-collapse-closed');
+  body.classList.toggle('spells-collapse-closed', isOpen);
+  btn.setAttribute('aria-expanded', !isOpen);
+  if (icon) icon.textContent = isOpen ? '▶' : '▼';
 });
 document.querySelectorAll('.bg-sub-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -863,12 +980,13 @@ document.querySelectorAll('.bg-sub-btn').forEach(btn => {
 });
 ['name', 'level', 'race', 'class', 'experiencePoints'].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('input', updateBanner);
-  if (el) el.addEventListener('change', updateBanner);
+  if (el) el.addEventListener('input', () => { updateBanner(); if (id === 'class' || id === 'level') renderSpellsTab(); });
+  if (el) el.addEventListener('change', () => { updateBanner(); if (id === 'class' || id === 'level') renderSpellsTab(); });
 });
 
 function resetToBlankCharacter() {
   state.characterId = null;
+  state.spellsKnown = [];
   loadCharacterIntoForm({
     name: '',
     level: 1,
@@ -1315,6 +1433,126 @@ document.getElementById('btn-close-feature-choices')?.addEventListener('click', 
 document.getElementById('feature-choices-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'feature-choices-modal') e.target.classList.add('hidden');
 });
+
+/* ========== Spells tab (filtered by level and class) ========== */
+let sheetSpellsCache = null;
+let sheetSpellsLoading = false;
+
+async function loadSpellsForSheet() {
+  if (sheetSpellsCache !== null || sheetSpellsLoading) return;
+  sheetSpellsLoading = true;
+  try {
+    const res = await fetch(API_BASE + '/api/spells');
+    sheetSpellsCache = res.ok ? await res.json() : [];
+  } catch (e) {
+    sheetSpellsCache = [];
+  }
+  sheetSpellsLoading = false;
+}
+
+function getSpellsFilteredForCharacter() {
+  const classId = (getValue('class') || '').toLowerCase().trim();
+  const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
+  if (!classId || !SPELLCASTING_CLASSES.includes(classId)) return [];
+  if (!sheetSpellsCache || !sheetSpellsCache.length) return [];
+  return sheetSpellsCache.filter(s => {
+    const spellLevel = s.level ?? 0;
+    if (spellLevel > charLevel) return false;
+    const classes = s.classes || [];
+    return classes.some(c => (c || '').toLowerCase().trim() === classId);
+  });
+}
+
+function renderSpellsTab() {
+  const hint = document.getElementById('spells-hint');
+  const wrap = document.getElementById('spells-available-wrap');
+  const classId = (getValue('class') || '').toLowerCase().trim();
+  const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
+  const isCaster = SPELLCASTING_CLASSES.includes(classId);
+
+  if (!isCaster) {
+    if (hint) hint.textContent = 'Choose a spellcasting class (e.g. Wizard, Cleric, Bard) and set your level to see spells you can add.';
+    if (hint) hint.classList.remove('hidden');
+    if (wrap) wrap.classList.add('hidden');
+    return;
+  }
+
+  if (hint) hint.classList.add('hidden');
+  if (wrap) wrap.classList.remove('hidden');
+
+  const getAbilityMod = (ability) => abilityModifier(parseInt(getValue('ability-' + ability), 10) || 10);
+  const limitInfo = getSpellLimit(classId, charLevel, getAbilityMod);
+  const currentCount = (state.spellsKnown || []).filter(Boolean).length;
+  const atOrOverLimit = limitInfo.limit > 0 && currentCount >= limitInfo.limit;
+
+  const limitEl = document.getElementById('spells-limit-display');
+  if (limitEl) {
+    limitEl.textContent = limitInfo.label + ': ' + currentCount + ' / ' + limitInfo.limit;
+    limitEl.classList.toggle('spells-limit-over', limitInfo.limit > 0 && currentCount > limitInfo.limit);
+  }
+
+  const slotsEl = document.getElementById('spells-slots-display');
+  if (slotsEl) slotsEl.textContent = getSpellSlotsText(classId, charLevel) ? ('Spell slots: ' + getSpellSlotsText(classId, charLevel)) : '';
+
+  const availableList = document.getElementById('spells-available-list');
+  const knownList = document.getElementById('spells-known-list');
+  const searchQ = (document.getElementById('spells-search')?.value || '').toLowerCase().trim();
+
+  let filtered = getSpellsFilteredForCharacter();
+  if (searchQ) filtered = filtered.filter(s => (s.name || '').toLowerCase().includes(searchQ));
+  filtered.sort((a, b) => {
+    if (a.level !== b.level) return (a.level ?? 0) - (b.level ?? 0);
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  const knownSet = new Set((state.spellsKnown || []).map(n => (n || '').trim()).filter(Boolean));
+  const available = filtered.filter(s => !knownSet.has((s.name || '').trim()));
+
+  if (availableList) {
+    availableList.innerHTML = '';
+    available.forEach(spell => {
+      const levelStr = spell.level === 0 ? 'Cantrip' : (spell.level === 1 ? '1st' : spell.level === 2 ? '2nd' : spell.level === 3 ? '3rd' : (spell.level || 0) + 'th');
+      const row = document.createElement('div');
+      row.className = 'spells-list-row';
+      const nameEsc = escapeHtml(spell.name || '');
+      const addDisabled = atOrOverLimit ? ' disabled' : '';
+      const addTitle = atOrOverLimit ? ' title="At maximum ' + limitInfo.label.toLowerCase() + '"' : '';
+      row.innerHTML = '<span class="spell-level-tag">[' + levelStr + ']</span> <span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <button type="button" class="btn btn-ghost btn-sm spell-add-btn" data-name="' + nameEsc + '"' + addDisabled + addTitle + '>Add</button>';
+      const addBtn = row.querySelector('.spell-add-btn');
+      if (addBtn && !atOrOverLimit) {
+        addBtn.addEventListener('click', () => {
+          const name = (addBtn.dataset.name || '').trim();
+          if (name && !state.spellsKnown.includes(name)) state.spellsKnown.push(name);
+          renderSpellsTab();
+        });
+      }
+      availableList.appendChild(row);
+    });
+  }
+
+  if (knownList) {
+    knownList.innerHTML = '';
+    const knownNames = (state.spellsKnown || []).filter(Boolean);
+    knownNames.forEach(name => {
+      const row = document.createElement('div');
+      row.className = 'spells-list-row';
+      const nameEsc = escapeHtml(name);
+      row.innerHTML = '<span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <button type="button" class="btn btn-ghost btn-sm btn-danger spell-remove-btn" data-name="' + nameEsc + '">Remove</button>';
+      row.querySelector('.spell-remove-btn')?.addEventListener('click', () => {
+        state.spellsKnown = state.spellsKnown.filter(n => n !== name);
+        renderSpellsTab();
+      });
+      knownList.appendChild(row);
+    });
+  }
+
+  document.querySelectorAll('.spell-tooltip-trigger').forEach(el => {
+    el.removeEventListener('mouseenter', showSpellTooltip);
+    el.removeEventListener('mouseleave', hideTooltip);
+    el.addEventListener('mouseenter', showSpellTooltip);
+    el.addEventListener('mouseleave', hideTooltip);
+  });
+}
 
 /* ========== Reference Database (Open5e API – no new tabs, no credentials) ========== */
 let refState = {

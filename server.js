@@ -80,6 +80,7 @@ function getDefaultCharacter() {
     deathSaves: { successes: 0, failures: 0 },
     attacks: [],
     equipment: '',
+    spells: [],
     featuresTraits: '',
     customFeatures: '',
     featureChoices: {},

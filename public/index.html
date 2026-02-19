@@ -360,6 +360,7 @@
         <div class="tabs-nav">
           <button type="button" class="tab-btn active" data-tab="actions">Actions</button>
           <button type="button" class="tab-btn" data-tab="inventory">Inventory</button>
+          <button type="button" class="tab-btn" data-tab="spells">Spells</button>
           <button type="button" class="tab-btn" data-tab="features">Features & Traits</button>
           <button type="button" class="tab-btn" data-tab="background">Background</button>
           <button type="button" class="tab-btn" data-tab="notes">Notes</button>
@@ -370,6 +371,30 @@
           </div>
           <div id="tab-inventory" class="tab-pane hidden">
             <textarea id="equipment" rows="8" placeholder="List equipment…"></textarea>
+          </div>
+          <div id="tab-spells" class="tab-pane hidden">
+            <p id="spells-hint" class="spells-hint">Set your class and level above; spells available to your class and level will appear here.</p>
+            <div id="spells-available-wrap" class="spells-panel-wrap hidden">
+              <div class="spells-tab-header">
+                <p id="spells-limit-display" class="spells-limit-display"></p>
+                <p id="spells-slots-display" class="spells-slots-display"></p>
+              </div>
+              <div class="spells-panel-wrap-inner">
+                <div class="spells-collapsible">
+                  <button type="button" id="spells-available-toggle" class="spells-collapse-btn" aria-expanded="true">
+                    <span class="spells-collapse-icon">▼</span> Available spells (by level and class)
+                  </button>
+                  <div id="spells-available-body" class="spells-collapse-body">
+                    <input type="text" id="spells-search" class="spells-search" placeholder="Search spells…" />
+                    <div id="spells-available-list" class="spells-list"></div>
+                  </div>
+                </div>
+                <div class="spells-panel">
+                  <h4 class="spells-panel-title">Spells you know</h4>
+                  <div id="spells-known-list" class="spells-list spells-known-list"></div>
+                </div>
+              </div>
+            </div>
           </div>
           <div id="tab-features" class="tab-pane hidden">
             <button type="button" id="btn-feature-choices" class="btn btn-ghost btn-sm feature-choices-btn">Manage Feature Choices</button>
