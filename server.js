@@ -105,18 +105,27 @@ app.get('/api/auth/me', (req, res) => {
   res.json(null);
 });
 
+function isValidEmail(s) {
+  if (typeof s !== 'string' || !s.trim()) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
 app.post('/api/auth/register', (req, res) => {
   try {
-    const { username, password } = req.body || {};
+    const { username, password, email } = req.body || {};
     const u = (username || '').trim().toLowerCase();
     const p = password == null ? '' : String(password);
+    const emailNorm = (email != null && String(email).trim()) ? String(email).trim().toLowerCase() : '';
     if (!u || u.length < 2) return res.status(400).json({ error: 'Username must be at least 2 characters' });
     if (!p || p.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (!emailNorm) return res.status(400).json({ error: 'Email is required' });
+    if (!isValidEmail(emailNorm)) return res.status(400).json({ error: 'Please enter a valid email address' });
     const users = readUsers();
     if (users.some(usr => (usr.username || '').toLowerCase() === u)) return res.status(409).json({ error: 'Username already taken' });
+    if (users.some(usr => (usr.email || '').toLowerCase() === emailNorm)) return res.status(409).json({ error: 'An account with this email already exists' });
     const id = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
     const hash = bcrypt.hashSync(p, 10);
-    users.push({ id, username: u, passwordHash: hash, createdAt: new Date().toISOString() });
+    users.push({ id, username: u, email: emailNorm, passwordHash: hash, createdAt: new Date().toISOString() });
     writeUsers(users);
     req.session.userId = id;
     req.session.username = u;

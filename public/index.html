@@ -50,7 +50,7 @@
           </span>
           <span id="auth-user" class="auth-user hidden">
             <span id="auth-username"></span>
-            <button type="button" id="btn-logout" class="btn btn-ghost">Log out</button>
+            <button type="button" id="btn-logout" class="btn btn-banner">Log out</button>
           </span>
           <button type="button" id="btn-manage" class="btn btn-banner btn-gated-by-auth" title="Manage character" data-title-logged-in="Manage character">Manage</button>
         </div>
@@ -427,6 +427,7 @@
         <div id="auth-error" class="auth-error hidden"></div>
         <form id="auth-form">
           <label>Username <input type="text" id="auth-username-input" autocomplete="username" required /></label>
+          <label id="auth-email-row" class="hidden">Email <input type="email" id="auth-email-input" autocomplete="email" placeholder="you@example.com" /></label>
           <label>Password <input type="password" id="auth-password-input" autocomplete="current-password" required /></label>
           <div class="auth-form-actions">
             <button type="submit" id="auth-submit" class="btn btn-primary">Log in</button>

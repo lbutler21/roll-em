@@ -98,6 +98,8 @@ function openAuthModal(mode) {
   const title = document.getElementById('auth-modal-title');
   const submitBtn = document.getElementById('auth-submit');
   const switchBtn = document.getElementById('auth-switch-mode');
+  const emailRow = document.getElementById('auth-email-row');
+  const emailInput = document.getElementById('auth-email-input');
   document.getElementById('auth-username-input').value = '';
   document.getElementById('auth-password-input').value = '';
   document.getElementById('auth-error').classList.add('hidden');
@@ -105,10 +107,14 @@ function openAuthModal(mode) {
     if (title) title.textContent = 'Create account';
     if (submitBtn) submitBtn.textContent = 'Register';
     if (switchBtn) switchBtn.textContent = 'Already have an account? Log in';
+    if (emailRow) emailRow.classList.remove('hidden');
+    if (emailInput) { emailInput.value = ''; emailInput.required = true; }
   } else {
     if (title) title.textContent = 'Log in';
     if (submitBtn) submitBtn.textContent = 'Log in';
     if (switchBtn) switchBtn.textContent = 'Create an account';
+    if (emailRow) emailRow.classList.add('hidden');
+    if (emailInput) { emailInput.value = ''; emailInput.required = false; }
   }
   document.getElementById('auth-modal').classList.remove('hidden');
 }
@@ -722,15 +728,17 @@ document.getElementById('auth-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('auth-username-input').value.trim();
   const password = document.getElementById('auth-password-input').value;
+  const email = document.getElementById('auth-email-input')?.value?.trim() || '';
   const errEl = document.getElementById('auth-error');
   errEl.classList.add('hidden');
   const url = authModalMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+  const body = authModalMode === 'register' ? { username, password, email } : { username, password };
   try {
     const res = await fetch(API_BASE + url, {
       method: 'POST',
       ...API_CREDENTIALS,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify(body)
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
