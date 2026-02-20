@@ -556,7 +556,8 @@ function getCharacterFromForm() {
     bgBonds: getValue('bgBonds'),
     bgFlaws: getValue('bgFlaws'),
     toolProficiencies: getValue('toolProficiencies'),
-    languages: getValue('languages')
+    languages: getValue('languages'),
+    portrait: getValue('portrait') || undefined
   };
 }
 
@@ -666,6 +667,10 @@ function loadCharacterIntoForm(data) {
   setValue('bgFlaws', data.bgFlaws ?? '');
   setValue('toolProficiencies', data.toolProficiencies ?? '');
   setValue('languages', data.languages ?? '');
+  setValue('portrait', data.portrait ?? '');
+  const portraitUrlInput = document.getElementById('portrait-url');
+  if (portraitUrlInput) portraitUrlInput.value = (data.portrait && (data.portrait.startsWith('http://') || data.portrait.startsWith('https://')) ? data.portrait : '');
+  updatePortraitDisplay();
   toggleCustomInputs();
   updateAutoFeatures();
 
@@ -729,6 +734,50 @@ function updateModifiers() {
   updateBanner();
 }
 
+function updatePortraitDisplay() {
+  const val = getValue('portrait') || '';
+  const bannerImg = document.getElementById('banner-portrait');
+  const bannerPlaceholder = document.getElementById('banner-portrait-placeholder');
+  const previewImg = document.getElementById('portrait-preview');
+  const previewPlaceholder = document.getElementById('portrait-preview-placeholder');
+  const setImg = (imgEl, placeholderEl, src) => {
+    if (!imgEl || !placeholderEl) return;
+    if (src && (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://'))) {
+      imgEl.src = src;
+      imgEl.classList.remove('hidden');
+      placeholderEl.classList.add('hidden');
+    } else {
+      imgEl.src = '';
+      imgEl.classList.add('hidden');
+      placeholderEl.classList.remove('hidden');
+    }
+  };
+  setImg(bannerImg, bannerPlaceholder, val);
+  setImg(previewImg, previewPlaceholder, val);
+  const wrap = document.getElementById('banner-portrait-wrap');
+  if (wrap) wrap.classList.toggle('char-portrait-wrap--clickable', !!val);
+}
+
+function openPortraitLightbox() {
+  const val = getValue('portrait') || '';
+  if (!val || (!val.startsWith('data:') && !val.startsWith('http://') && !val.startsWith('https://'))) return;
+  const img = document.getElementById('portrait-lightbox-img');
+  const lb = document.getElementById('portrait-lightbox');
+  if (img && lb) {
+    img.src = val;
+    lb.classList.remove('hidden');
+    lb.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closePortraitLightbox() {
+  const lb = document.getElementById('portrait-lightbox');
+  if (lb) {
+    lb.classList.add('hidden');
+    lb.setAttribute('aria-hidden', 'true');
+  }
+}
+
 function updateBanner() {
   const name = getValue('name') || 'Character Sheet';
   const race = getDisplayName('race', 'raceCustom') || '';
@@ -749,6 +798,7 @@ function updateBanner() {
     const pct = next > curr ? Math.min(100, ((xp - curr) / (next - curr)) * 100) : 100;
     elBar.style.width = Math.max(0, pct) + '%';
   }
+  updatePortraitDisplay();
 }
 
 function roll(diceNotation) {
@@ -850,6 +900,49 @@ document.getElementById('btn-close-manage')?.addEventListener('click', () => {
 });
 document.getElementById('manage-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'manage-modal') e.target.classList.add('hidden');
+});
+
+document.getElementById('portrait-file')?.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    setValue('portrait', reader.result);
+    updatePortraitDisplay();
+    e.target.value = '';
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('portrait-url')?.addEventListener('input', () => {
+  const url = document.getElementById('portrait-url')?.value?.trim() || '';
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    setValue('portrait', url);
+    updatePortraitDisplay();
+  }
+});
+document.getElementById('portrait-url')?.addEventListener('blur', () => {
+  const url = document.getElementById('portrait-url')?.value?.trim() || '';
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    setValue('portrait', url);
+    updatePortraitDisplay();
+  }
+});
+document.getElementById('portrait-clear')?.addEventListener('click', () => {
+  setValue('portrait', '');
+  document.getElementById('portrait-url').value = '';
+  document.getElementById('portrait-file').value = '';
+  updatePortraitDisplay();
+});
+
+document.getElementById('banner-portrait-wrap')?.addEventListener('click', () => {
+  if (getValue('portrait')) openPortraitLightbox();
+});
+document.getElementById('portrait-lightbox')?.addEventListener('click', (e) => {
+  if (e.target.id === 'portrait-lightbox') closePortraitLightbox();
+});
+document.getElementById('portrait-lightbox-close')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  closePortraitLightbox();
 });
 
 function toggleTheme() {

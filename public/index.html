@@ -70,6 +70,10 @@
       <div class="char-banner-main">
         <div class="char-banner-left">
           <button type="button" id="btn-create" class="btn btn-primary" title="Create new character">Create Character</button>
+          <div id="banner-portrait-wrap" class="char-portrait-wrap" title="Click to view larger">
+            <img id="banner-portrait" class="char-portrait hidden" src="" alt="Character portrait" />
+            <div id="banner-portrait-placeholder" class="char-portrait-placeholder">No portrait</div>
+          </div>
           <div class="char-identity">
             <h1 id="banner-name" class="char-name">Character Sheet</h1>
             <p id="banner-subtitle" class="char-subtitle">—</p>
@@ -479,6 +483,12 @@
       </div>
     </main>
 
+    <!-- Portrait lightbox (click banner portrait to view larger) -->
+    <div id="portrait-lightbox" class="modal portrait-lightbox hidden" aria-hidden="true">
+      <button type="button" id="portrait-lightbox-close" class="portrait-lightbox-close" aria-label="Close">×</button>
+      <img id="portrait-lightbox-img" class="portrait-lightbox-img" src="" alt="Character portrait" />
+    </div>
+
     <!-- Feature choices modal -->
     <div id="feature-choices-modal" class="modal hidden">
       <div class="modal-content feature-choices-modal-content">
@@ -493,6 +503,21 @@
     <div id="manage-modal" class="modal hidden">
       <div class="modal-content manage-modal-content">
         <h3>Manage Character</h3>
+        <div class="portrait-choose">
+          <label class="portrait-label">Character portrait</label>
+          <div class="portrait-row">
+            <div class="portrait-preview-wrap">
+              <img id="portrait-preview" class="portrait-preview hidden" src="" alt="Preview" />
+              <div id="portrait-preview-placeholder" class="portrait-preview-placeholder">No image</div>
+            </div>
+            <div class="portrait-inputs">
+              <input type="file" id="portrait-file" accept="image/*" class="portrait-file" />
+              <label>Or image URL <input type="text" id="portrait-url" placeholder="https://…" /></label>
+              <button type="button" id="portrait-clear" class="btn btn-ghost btn-sm">Clear portrait</button>
+            </div>
+          </div>
+          <input type="hidden" id="portrait" />
+        </div>
         <div class="info-grid">
           <label>Character Name <input type="text" id="name" placeholder="—" /></label>
           <label>Race <select id="race"><option value="">—</option></select><input type="text" id="raceCustom" class="custom-input hidden" placeholder="Custom race" /></label>

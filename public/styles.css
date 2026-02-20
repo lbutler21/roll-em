@@ -123,7 +123,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-dark);
   padding: 1.5rem;
   position: relative;
 }
@@ -177,7 +176,6 @@
 /* Admin panel (only visible at #admin when logged in as admin) */
 .admin-panel {
   min-height: 100vh;
-  background: var(--bg-dark);
   padding: 1.5rem;
 }
 
@@ -254,12 +252,36 @@
 
 body {
   margin: 0;
-  background: var(--bg-dark);
   min-height: 100vh;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.4;
+  background-color: var(--bg-dark);
+  /* Birch-bark texture: subtle horizontal striations */
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 1px,
+      rgba(0, 0, 0, 0.04) 1px,
+      rgba(0, 0, 0, 0.04) 2px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 6px,
+      rgba(255, 255, 255, 0.015) 6px,
+      rgba(255, 255, 255, 0.015) 7px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 14px,
+      rgba(0, 0, 0, 0.02) 14px,
+      rgba(0, 0, 0, 0.02) 15px
+    );
+  background-size: 100% 100%;
 }
 
 .app {
@@ -287,6 +309,37 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.char-portrait-wrap {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--banner-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.char-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.char-portrait-wrap--clickable {
+  cursor: pointer;
+}
+
+.char-portrait-placeholder {
+  font-size: 0.65rem;
+  color: var(--banner-text-dim);
+  text-align: center;
+  padding: 0.25rem;
+  line-height: 1.1;
 }
 
 .char-identity {
@@ -967,6 +1020,78 @@ body {
   max-width: 520px;
 }
 
+.portrait-choose {
+  margin-bottom: 1rem;
+}
+
+.portrait-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin-bottom: 0.35rem;
+}
+
+.portrait-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.portrait-preview-wrap {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--grey-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portrait-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portrait-preview-placeholder {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  padding: 0.25rem;
+  text-align: center;
+}
+
+.portrait-inputs {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.portrait-file {
+  font-size: 0.85rem;
+}
+
+.portrait-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.portrait-inputs label input {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
 .manage-actions {
   display: flex;
   justify-content: space-between;
@@ -1087,7 +1212,7 @@ body {
 }
 
 .ref-loading.ref-error {
-  color: var(--danger, #c41e3a);
+  color: var(--danger);
 }
 
 .ref-detail {
@@ -1566,6 +1691,46 @@ textarea {
 
 .modal.hidden {
   display: none;
+}
+
+.portrait-lightbox {
+  background: rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+}
+
+.portrait-lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.portrait-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portrait-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .modal-content {
