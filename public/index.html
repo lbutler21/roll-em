@@ -47,6 +47,23 @@
         </div>
       </div>
     </div>
+    <!-- Auth modal (login / register) - outside main-app so it shows from landing page -->
+    <div id="auth-modal" class="modal hidden">
+      <div class="modal-content auth-modal-content">
+        <h3 id="auth-modal-title">Log in</h3>
+        <div id="auth-error" class="auth-error hidden"></div>
+        <form id="auth-form">
+          <label>Username <input type="text" id="auth-username-input" autocomplete="username" required /></label>
+          <label id="auth-email-row" class="hidden">Email <input type="email" id="auth-email-input" autocomplete="email" placeholder="you@example.com" /></label>
+          <label>Password <input type="password" id="auth-password-input" autocomplete="current-password" required /></label>
+          <div class="auth-form-actions">
+            <button type="submit" id="auth-submit" class="btn btn-primary">Log in</button>
+            <button type="button" id="auth-switch-mode" class="btn btn-ghost">Create an account</button>
+            <button type="button" id="auth-cancel" class="btn btn-ghost">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <div id="main-app" class="hidden">
     <!-- Character banner -->
     <header class="char-banner">
@@ -461,24 +478,6 @@
 
       </div>
     </main>
-
-    <!-- Auth modal (login / register) -->
-    <div id="auth-modal" class="modal hidden">
-      <div class="modal-content auth-modal-content">
-        <h3 id="auth-modal-title">Log in</h3>
-        <div id="auth-error" class="auth-error hidden"></div>
-        <form id="auth-form">
-          <label>Username <input type="text" id="auth-username-input" autocomplete="username" required /></label>
-          <label id="auth-email-row" class="hidden">Email <input type="email" id="auth-email-input" autocomplete="email" placeholder="you@example.com" /></label>
-          <label>Password <input type="password" id="auth-password-input" autocomplete="current-password" required /></label>
-          <div class="auth-form-actions">
-            <button type="submit" id="auth-submit" class="btn btn-primary">Log in</button>
-            <button type="button" id="auth-switch-mode" class="btn btn-ghost">Create an account</button>
-            <button type="button" id="auth-cancel" class="btn btn-ghost">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
 
     <!-- Feature choices modal -->
     <div id="feature-choices-modal" class="modal hidden">
