@@ -47,6 +47,25 @@ function writeCharacters(characters) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(characters, null, 2));
 }
 
+// Modern and futuristic firearms (DMG-style / common 5e references); merged into equipment API
+const MODERN_FIREARMS = [
+  { name: 'Revolver', type: 'Weapon (Modern)', desc: '2d8 piercing. Range 40/120. Reload (6 shots). Ammunition (bullets). 3 lb.' },
+  { name: 'Pistol', type: 'Weapon (Modern)', desc: 'Semiautomatic. 2d6 piercing. Range 50/150. Reload (15 shots). Ammunition (bullets). 3 lb.' },
+  { name: 'Automatic Pistol', type: 'Weapon (Modern)', desc: '2d6 piercing. Range 50/150. Reload (15 shots). Ammunition (bullets). 3 lb.' },
+  { name: 'Hunting Rifle', type: 'Weapon (Modern)', desc: '2d10 piercing. Range 80/240. Reload (5 shots). Two-handed. Ammunition (bullets). 8 lb.' },
+  { name: 'Automatic Rifle', type: 'Weapon (Modern)', desc: '2d8 piercing. Range 80/240. Burst fire (10-ft cube, DC 15 DEX or damage). Reload (30 shots). Two-handed. 8 lb.' },
+  { name: 'Shotgun', type: 'Weapon (Modern)', desc: '2d8 piercing. Range 30/90. Reload (2 shots). Two-handed. Ammunition (shells). 7 lb.' },
+  { name: 'Laser Pistol', type: 'Weapon (Futuristic)', desc: '3d6 radiant. Range 60/150. Reload (Energy Cell). Ammunition (energy cell).' },
+  { name: 'Laser Rifle', type: 'Weapon (Futuristic)', desc: '3d6 radiant. Range 100/300. Reload (Energy Cell). Two-handed. Ammunition (energy cell).' },
+  { name: 'Blaster Pistol', type: 'Weapon (Futuristic)', desc: '3d6 force or radiant. Range 60/180. Reload (power pack). Ammunition (power pack).' },
+  { name: 'Blaster Rifle', type: 'Weapon (Futuristic)', desc: '3d6 force or radiant. Range 100/300. Reload (power pack). Two-handed. Ammunition (power pack).' },
+  { name: 'Blaster Carbine', type: 'Weapon (Futuristic)', desc: '3d6 force. Range 90/270. Reload (power pack). Two-handed. Ammunition (power pack).' },
+  { name: 'Antimatter Rifle', type: 'Weapon (Futuristic)', desc: '6d8 necrotic. Range 120/360. Reload (2 shots, Energy Cell). Two-handed. Ammunition (energy cell).' },
+  { name: 'Plasma Pistol', type: 'Weapon (Futuristic)', desc: '3d6 fire or radiant. Range 50/150. Reload (power pack). Ammunition (power pack).' },
+  { name: 'Plasma Rifle', type: 'Weapon (Futuristic)', desc: '3d8 fire or radiant. Range 100/300. Reload (power pack). Two-handed. Ammunition (power pack).' },
+  { name: 'Stun Pistol', type: 'Weapon (Futuristic)', desc: 'Nonlethal. Target DC 15 CON or stunned 1 round. Range 30/90. Reload (power pack).' }
+];
+
 function getDefaultCharacter() {
   return {
     id: null,
@@ -349,6 +368,7 @@ async function fetchAllEquipment() {
       desc: (a.ac_display ? `AC ${a.ac_display}. ` : '') + (a.strength_score_required ? `Str ${a.strength_score_required} required. ` : '') + (a.grants_stealth_disadvantage ? 'Stealth disadvantage.' : '')
     });
   });
+  list.push(...MODERN_FIREARMS);
   equipmentCache = list;
   return list;
 }

@@ -955,8 +955,12 @@ function getMergedInventoryItems() {
   eq.forEach(i => {
     const type = (i.type || '').toLowerCase();
     let category = 'other';
-    if (type.includes('weapon')) category = type.includes('martial') ? 'weapon_martial' : 'weapon_simple';
-    else if (type.includes('armor')) category = 'armor';
+    if (type.includes('weapon')) {
+      if (type.includes('martial')) category = 'weapon_martial';
+      else if (type.includes('modern')) category = 'weapon_modern';
+      else if (type.includes('futuristic')) category = 'weapon_futuristic';
+      else category = 'weapon_simple';
+    } else if (type.includes('armor')) category = 'armor';
     list.push({ name: i.name, type: i.type, desc: i.desc || '', category, source: 'equipment' });
   });
   mag.forEach(i => {
@@ -987,6 +991,8 @@ function filterInventoryItems(list, query) {
       if (term === 'simple') return cat === 'weapon_simple' || type.includes('simple');
       if (term === 'armor') return cat === 'armor' || type.includes('armor');
       if (term === 'magic') return cat === 'magic' || type.includes('magic');
+      if (term === 'modern' || term === 'firearm') return cat === 'weapon_modern' || type.includes('modern');
+      if (term === 'futuristic' || term === 'blaster' || term === 'laser' || term === 'sci-fi') return cat === 'weapon_futuristic' || type.includes('futuristic') || name.includes(term);
       return searchable.includes(term);
     };
     return terms.every(t => matchesTerm(t));
@@ -1783,6 +1789,10 @@ let refState = {
 function openReference() {
   refState.category = 'spells';
   refState.selectedIndex = -1;
+  refState.spells = null;
+  refState.equipment = null;
+  refState.magicitems = null;
+  refState.rules = null;
   document.querySelectorAll('.ref-sub-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.ref-sub-btn[data-ref-cat="spells"]')?.classList.add('active');
   document.getElementById('reference-search-input').value = '';
