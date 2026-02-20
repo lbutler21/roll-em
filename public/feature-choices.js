@@ -1,4 +1,4 @@
-// Feature choices at certain levels (5e D&D)
+// Feature choices at certain levels (2014 5e D&D)
 
 const FEATURE_CHOICES = {
   draconicAncestry: {

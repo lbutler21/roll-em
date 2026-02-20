@@ -145,8 +145,14 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--banner-text);
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.25rem;
   letter-spacing: 0.02em;
+}
+
+.landing-rules-note {
+  font-size: 0.8rem;
+  color: var(--banner-text-dim);
+  margin: 0 0 0.5rem;
 }
 
 .landing-subtitle {
@@ -725,6 +731,15 @@ body {
 
 .tab-pane.hidden {
   display: none;
+}
+
+.inventory-toolbar {
+  margin-bottom: 0.5rem;
+}
+
+.inventory-toolbar .btn-sm {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.75rem;
 }
 
 /* Notes tab sections */
@@ -1731,6 +1746,76 @@ textarea {
 
 .portrait-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+.inventory-add-modal-content {
+  max-width: 480px;
+}
+
+.inventory-add-hint {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  margin: 0 0 0.75rem;
+}
+
+.inventory-add-search {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--grey-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+
+.inventory-add-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.inventory-add-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--grey-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.inventory-add-item:hover {
+  border-color: var(--accent);
+  background: rgba(196, 30, 58, 0.06);
+}
+
+.inventory-add-item-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inventory-add-item-type {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.inventory-add-loading,
+.inventory-add-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.inventory-add-loading.ref-error {
+  color: var(--danger);
 }
 
 .modal-content {

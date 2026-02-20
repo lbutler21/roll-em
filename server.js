@@ -297,7 +297,7 @@ app.delete('/api/characters/:id', requireAuth, (req, res) => {
 });
 
 // ---------- Open5e API (no credentials required) ----------
-// https://api.open5e.com/ - 5e SRD & OGL content
+// https://api.open5e.com/ - 2014 5e SRD & OGL content (not 2024 revised rules)
 
 let spellsCache = null;
 let equipmentCache = null;

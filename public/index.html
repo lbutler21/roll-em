@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>5e D&D Character Sheet</title>
+  <title>5e D&D Character Sheet (2014 rules)</title>
   <script>
     (function(){try{var t=localStorage.getItem('dice-proj-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();
   </script>
@@ -39,6 +39,7 @@
       <button type="button" id="landing-theme-toggle" class="btn btn-ghost landing-theme-btn no-print" title="Switch to light mode" aria-label="Theme">☀</button>
       <div class="landing-inner">
         <h1 class="landing-title">5e D&D Character Sheet</h1>
+        <p class="landing-rules-note">2014 core rules</p>
         <p class="landing-subtitle">Create and manage your characters</p>
         <button type="button" id="btn-start-now" class="btn btn-primary btn-landing-cta">Start now</button>
         <div class="landing-auth-links">
@@ -391,6 +392,9 @@
             <textarea id="attacks" rows="5" placeholder="Attacks & spellcasting: Name | Atk Bonus | Damage/Type"></textarea>
           </div>
           <div id="tab-inventory" class="tab-pane hidden">
+            <div class="inventory-toolbar">
+              <button type="button" id="btn-add-inventory-items" class="btn btn-primary btn-sm">Add items…</button>
+            </div>
             <textarea id="equipment" rows="8" placeholder="List equipment…"></textarea>
           </div>
           <div id="tab-spells" class="tab-pane hidden">
@@ -594,7 +598,7 @@
           <div id="ref-list" class="ref-list"></div>
           <div id="ref-detail" class="ref-detail"></div>
         </div>
-        <p class="reference-credit">Reference data from Open5e (no account required).</p>
+        <p class="reference-credit">Reference data: 2014 5e SRD via Open5e (no account required).</p>
         <button type="button" id="btn-close-reference" class="btn btn-ghost">Close</button>
       </div>
     </div>
@@ -605,6 +609,17 @@
         <h3>Load Character</h3>
         <ul id="character-list" class="character-list"></ul>
         <button type="button" id="btn-close-load" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
+
+    <!-- Add to inventory modal (search equipment & magic items) -->
+    <div id="inventory-add-modal" class="modal hidden">
+      <div class="modal-content inventory-add-modal-content">
+        <h3>Add to inventory</h3>
+        <p class="inventory-add-hint">Search by name or keywords (e.g. weapon, martial, simple, armor, magic). Click an item to add it.</p>
+        <input type="text" id="inventory-add-search" class="inventory-add-search" placeholder="Search: weapon, martial, armor, magic…" autocomplete="off" />
+        <div id="inventory-add-list" class="inventory-add-list"></div>
+        <button type="button" id="btn-close-inventory-add" class="btn btn-ghost">Close</button>
       </div>
     </div>
     </div>

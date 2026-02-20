@@ -1,10 +1,10 @@
-# 5e D&D Character Sheet
+# 5e D&D Character Sheet (2014 rules)
 
-A web app for creating and managing **Fifth Edition Dungeons & Dragons** character sheets. Enter stats by hand, roll dice (including ability and skill checks), and save/load characters on a backend server.
+A web app for creating and managing **Fifth Edition Dungeons & Dragons** character sheets using the **2014 core rules** (original PHB / SRD 5.1), not the 2024 revised core rulebooks. Enter stats by hand, roll dice (including ability and skill checks), and save/load characters on a backend server.
 
 ## Features
 
-- **Manual input**: All standard 5e fields — abilities, skills, saving throws, combat stats, equipment, features, and notes
+- **Manual input**: All standard 2014 5e fields — abilities, skills, saving throws, combat stats, equipment, features, and notes
 - **Auto-calculated modifiers**: Ability modifiers and skill/save modifiers (including proficiency) update as you type
 - **Dice rolling**: 
   - Roll d20 for any ability (STR, DEX, CON, INT, WIS, CHA)
@@ -38,13 +38,13 @@ The app is served from the same origin, so "Save to Server" and "Load" work with
 - `PUT /api/characters/:id` — Update a character
 - `DELETE /api/characters/:id` — Delete a character
 
-### Reference (Open5e – no credentials)
-- `GET /api/spells` — List spells (from Open5e)
+### Reference (Open5e – 2014 5e SRD, no credentials)
+- `GET /api/spells` — List spells (from Open5e; 2014 SRD)
 - `GET /api/equipment` — List weapons and armor
 - `GET /api/magicitems` — List magic items
 - `GET /api/rules` — List SRD rules sections
 
-Data is stored in `data/characters.json` (created automatically). Spells, equipment, magic items, and rules are fetched from the Open5e API and cached by the server. Everything is shown in-app (no new tabs); no account or credentials required.
+Data is stored in `data/characters.json` (created automatically). Spells, equipment, magic items, and rules are fetched from the Open5e API (2014 5e SRD / OGL content) and cached by the server. Everything is shown in-app (no new tabs); no account or credentials required.
 
 ## Tech
 

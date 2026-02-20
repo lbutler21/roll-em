@@ -398,14 +398,14 @@ const SKILL_ABILITY_MAP = {
 
 const SPELLCASTING_CLASSES = ['artificer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'warlock', 'wizard'];
 
-// 5e spells known by level (PHB/SRD). Index 0 = level 1.
+// 2014 5e spells known by level (PHB/SRD 5.1). Index 0 = level 1.
 const SPELLS_KNOWN_BARD = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22];
 const SPELLS_KNOWN_RANGER = [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11]; // 0 at level 1 (no spells yet)
 const SPELLS_KNOWN_SORCERER = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15];
 const SPELLS_KNOWN_WARLOCK = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15];
 const SPELLS_KNOWN_ARTIFICER = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11];
 
-// 5e full caster spell slots by character level [1st, 2nd, 3rd, ... 9th]. Index 0 = level 1.
+// 2014 5e full caster spell slots by character level [1st, 2nd, 3rd, ... 9th]. Index 0 = level 1.
 const SPELL_SLOTS_FULL = [
   [2], [3], [4,2], [4,3], [4,3,2], [4,3,3], [4,3,3,1], [4,3,3,2], [4,3,3,3,1], [4,3,3,3,2],
   [4,3,3,3,2,1], [4,3,3,3,2,1], [4,3,3,3,2,1,1], [4,3,3,3,2,1,1], [4,3,3,3,2,1,1,1], [4,3,3,3,2,1,1,1],
@@ -943,6 +943,125 @@ document.getElementById('portrait-lightbox')?.addEventListener('click', (e) => {
 document.getElementById('portrait-lightbox-close')?.addEventListener('click', (e) => {
   e.stopPropagation();
   closePortraitLightbox();
+});
+
+/* ========== Add to inventory (search equipment & magic items) ========== */
+const inventoryAddState = { equipment: null, magicitems: null, loading: false };
+
+function getMergedInventoryItems() {
+  const eq = inventoryAddState.equipment || [];
+  const mag = inventoryAddState.magicitems || [];
+  const list = [];
+  eq.forEach(i => {
+    const type = (i.type || '').toLowerCase();
+    let category = 'other';
+    if (type.includes('weapon')) category = type.includes('martial') ? 'weapon_martial' : 'weapon_simple';
+    else if (type.includes('armor')) category = 'armor';
+    list.push({ name: i.name, type: i.type, desc: i.desc || '', category, source: 'equipment' });
+  });
+  mag.forEach(i => {
+    list.push({
+      name: i.name,
+      type: i.type || 'Magic Item',
+      desc: (i.rarity ? i.rarity + '. ' : '') + (i.desc || ''),
+      category: 'magic',
+      source: 'magic'
+    });
+  });
+  return list;
+}
+
+function filterInventoryItems(list, query) {
+  const q = (query || '').toLowerCase().trim();
+  if (!q) return list;
+  const terms = q.split(/\s+/).filter(Boolean);
+  return list.filter(item => {
+    const name = (item.name || '').toLowerCase();
+    const type = (item.type || '').toLowerCase();
+    const desc = (item.desc || '').toLowerCase();
+    const cat = item.category || '';
+    const searchable = [name, type, desc, cat].join(' ');
+    const matchesTerm = term => {
+      if (term === 'weapon') return cat.startsWith('weapon') || type.includes('weapon');
+      if (term === 'martial') return cat === 'weapon_martial' || type.includes('martial');
+      if (term === 'simple') return cat === 'weapon_simple' || type.includes('simple');
+      if (term === 'armor') return cat === 'armor' || type.includes('armor');
+      if (term === 'magic') return cat === 'magic' || type.includes('magic');
+      return searchable.includes(term);
+    };
+    return terms.every(t => matchesTerm(t));
+  });
+}
+
+function renderInventoryAddList(items) {
+  const listEl = document.getElementById('inventory-add-list');
+  if (!listEl) return;
+  if (items.length === 0) {
+    listEl.innerHTML = '<div class="inventory-add-empty">No items match your search.</div>';
+    return;
+  }
+  listEl.innerHTML = items.map(item => {
+    const typeLabel = item.type ? escapeHtml(item.type) : '';
+    return '<button type="button" class="inventory-add-item" data-name="' + escapeHtml(item.name) + '" data-type="' + escapeHtml(typeLabel) + '" title="Click to add">' +
+      '<span class="inventory-add-item-name">' + escapeHtml(item.name) + '</span>' +
+      (typeLabel ? '<span class="inventory-add-item-type">' + typeLabel + '</span>' : '') +
+      '</button>';
+  }).join('');
+  listEl.querySelectorAll('.inventory-add-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name || '';
+      const type = btn.dataset.type || '';
+      const equipmentEl = document.getElementById('equipment');
+      if (!equipmentEl || !name) return;
+      const current = equipmentEl.value.trim();
+      const line = type ? name + ' (' + type + ')' : name;
+      equipmentEl.value = current ? current + '\n' + line : line;
+    });
+  });
+}
+
+async function openInventoryAddModal() {
+  const modal = document.getElementById('inventory-add-modal');
+  const listEl = document.getElementById('inventory-add-list');
+  const searchEl = document.getElementById('inventory-add-search');
+  if (!modal || !listEl) return;
+  modal.classList.remove('hidden');
+  if (searchEl) searchEl.value = '';
+  if (inventoryAddState.equipment === null || inventoryAddState.magicitems === null) {
+    inventoryAddState.loading = true;
+    listEl.innerHTML = '<div class="inventory-add-loading">Loading equipment and magic items…</div>';
+    try {
+      const [eqRes, magRes] = await Promise.all([
+        fetch(API_BASE + '/api/equipment'),
+        fetch(API_BASE + '/api/magicitems')
+      ]);
+      inventoryAddState.equipment = eqRes.ok ? await eqRes.json() : [];
+      inventoryAddState.magicitems = magRes.ok ? await magRes.json() : [];
+    } catch (err) {
+      inventoryAddState.equipment = [];
+      inventoryAddState.magicitems = [];
+      listEl.innerHTML = '<div class="inventory-add-loading ref-error">Could not load items.</div>';
+    }
+    inventoryAddState.loading = false;
+  }
+  const merged = getMergedInventoryItems();
+  const query = searchEl ? searchEl.value : '';
+  renderInventoryAddList(filterInventoryItems(merged, query));
+}
+
+function closeInventoryAddModal() {
+  document.getElementById('inventory-add-modal')?.classList.add('hidden');
+}
+
+document.getElementById('btn-add-inventory-items')?.addEventListener('click', openInventoryAddModal);
+document.getElementById('btn-close-inventory-add')?.addEventListener('click', closeInventoryAddModal);
+document.getElementById('inventory-add-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'inventory-add-modal') closeInventoryAddModal();
+});
+document.getElementById('inventory-add-search')?.addEventListener('input', () => {
+  const query = document.getElementById('inventory-add-search')?.value || '';
+  const merged = getMergedInventoryItems();
+  renderInventoryAddList(filterInventoryItems(merged, query));
 });
 
 function toggleTheme() {
@@ -1647,7 +1766,7 @@ function renderSpellsTab() {
   });
 }
 
-/* ========== Reference Database (Open5e API – no new tabs, no credentials) ========== */
+/* ========== Reference Database (Open5e API – 2014 5e SRD; no new tabs, no credentials) ========== */
 let refState = {
   category: 'spells',
   selectedIndex: -1,

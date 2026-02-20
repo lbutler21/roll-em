@@ -1,4 +1,4 @@
-// Tooltip descriptions for features and skills (5e D&D)
+// Tooltip descriptions for features and skills (2014 5e D&D)
 
 const FEATURE_DESCRIPTIONS = {
   darkvision: 'You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',

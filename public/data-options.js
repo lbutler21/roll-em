@@ -1,4 +1,4 @@
-// 5e D&D race, class, and background options with auto-filled features
+// 2014 5e D&D race, class, and background options with auto-filled features (PHB/SRD 5.1)
 
 const RACE_OPTIONS = {
   '': { name: '—', features: '' },
