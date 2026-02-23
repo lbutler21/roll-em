@@ -104,18 +104,6 @@ Data is stored in `data/characters.json` and `data/users.json` (created automati
 
 ---
 
-## Admin backdoor (local use only)
-
-Not linked in the UI. For development or local admin access:
-
-1. Open the app with **`#backdoor`** in the URL (e.g. `http://localhost:3000/#backdoor`).
-2. Enter the passcode **admin-login** and click **Unlock**.
-3. You are taken to the **admin panel** (Users and All characters). To open it again, use **`#admin`** (e.g. `http://localhost:3000/#admin`) while logged in as admin.
-
-To use a different passcode, set **`ADMIN_BACKDOOR_SECRET`** when starting the server.
-
----
-
 ## Deploying to production
 
 The app is a **Node.js + Express** backend with a **vanilla HTML/CSS/JS** frontend and file-based storage. Suitable hosts include **Railway** and **Render**.
