@@ -235,19 +235,6 @@
         </div>
       </section>
 
-      <!-- Saving throws -->
-      <section class="card card-saves">
-        <h2>Saving Throws</h2>
-        <div class="saves-list">
-          <label class="save-row"><input type="checkbox" id="save-str" /> STR <span id="save-mod-str">+0</span></label>
-          <label class="save-row"><input type="checkbox" id="save-dex" /> DEX <span id="save-mod-dex">+0</span></label>
-          <label class="save-row"><input type="checkbox" id="save-con" /> CON <span id="save-mod-con">+0</span></label>
-          <label class="save-row"><input type="checkbox" id="save-int" /> INT <span id="save-mod-int">+0</span></label>
-          <label class="save-row"><input type="checkbox" id="save-wis" /> WIS <span id="save-mod-wis">+0</span></label>
-          <label class="save-row"><input type="checkbox" id="save-cha" /> CHA <span id="save-mod-cha">+0</span></label>
-        </div>
-      </section>
-
       <!-- Skills -->
       <section class="card card-skills">
         <h2>Skills</h2>
@@ -295,6 +282,7 @@
 
       <!-- Right column: Combat stats, HP, tabbed content -->
       <div class="sheet-right">
+      <div class="combat-saves-row">
       <!-- Combat -->
       <section class="card card-combat">
         <h2>Combat</h2>
@@ -308,7 +296,7 @@
             <input type="number" id="initiative" value="0" />
           </div>
           <div class="combat-field">
-            <label>Hit Point Maximum</label>
+            <label>HP Max</label>
             <input type="number" id="hitPointMax" min="1" value="10" />
           </div>
           <div class="combat-field">
@@ -339,14 +327,30 @@
         </div>
       </section>
 
+      <div class="combat-saves-stack">
+      <!-- Saving throws -->
+      <section class="card card-saves">
+        <h2>Saving Throws</h2>
+        <div class="saves-list">
+          <label class="save-row"><input type="checkbox" id="save-str" /> STR <span id="save-mod-str">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-dex" /> DEX <span id="save-mod-dex">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-con" /> CON <span id="save-mod-con">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-int" /> INT <span id="save-mod-int">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-wis" /> WIS <span id="save-mod-wis">+0</span></label>
+          <label class="save-row"><input type="checkbox" id="save-cha" /> CHA <span id="save-mod-cha">+0</span></label>
+        </div>
+      </section>
+
       <!-- Proficiency, Speed, Inspiration -->
       <section class="card card-quick-stats">
         <div class="quick-stats-grid">
-          <div class="quick-stat"><label>Proficiency Bonus</label><span id="prof-display" class="stat-value">+2</span></div>
-          <div class="quick-stat"><label>Speed</label><input type="number" id="speed" min="0" value="30" class="stat-input" /> ft.</div>
+          <div class="quick-stat"><label>PB</label><span id="prof-display" class="stat-value">+2</span></div>
+          <div class="quick-stat"><label>Speed</label><span class="quick-stat-inline"><input type="number" id="speed" min="0" value="30" class="stat-input" /> ft.</span></div>
           <div class="quick-stat"><label>Inspiration</label><input type="number" id="inspiration" min="0" value="0" class="stat-input" /></div>
         </div>
       </section>
+      </div>
+      </div>
 
       <!-- Dice roller -->
       <section class="card card-dice">
@@ -384,7 +388,7 @@
             <button type="button" id="btn-toggle-mixed-dice" class="mixed-dice-toggle" title="Minimize / Expand" aria-expanded="true">
               <span class="mixed-dice-chevron" aria-hidden="true">▼</span>
             </button>
-            <h3 class="mixed-dice-title">Roll multiple types at once</h3>
+            <h3 class="mixed-dice-title">Roll Multiple</h3>
           </div>
           <div class="mixed-dice-body">
             <p class="mixed-dice-hint">Add dice to the pool, then roll. Click a die in the pool to remove it.</p>
@@ -491,8 +495,8 @@
                 <label><span class="char-label">Gender</span><input type="text" id="bgGender" placeholder="e.g. Male" /></label>
                 <label><span class="char-label">Eyes</span><input type="text" id="bgEyes" placeholder="e.g. Sharp Grey" /></label>
                 <label><span class="char-label">Size</span><input type="text" id="bgSize" placeholder="e.g. Medium" /></label>
-                <label><span class="char-label">Height</span><input type="text" id="bgHeight" placeholder="e.g. 5'7\"" /></label>
-                <label><span class="char-label">Faith</span><input type="text" id="bgFaith" placeholder="e.g. Protestant" /></label>
+                <label><span class="char-label">Height</span><input type="text" id="bgHeight" placeholder="e.g. 5'7&quot;" /></label>
+                <label><span class="char-label">Faith</span><input type="text" id="bgFaith" placeholder="e.g. Torm" /></label>
                 <label><span class="char-label">Hair</span><input type="text" id="bgHair" placeholder="e.g. Blonde" /></label>
                 <label><span class="char-label">Skin</span><input type="text" id="bgSkin" placeholder="e.g. Slightly Tanned" /></label>
                 <label><span class="char-label">Age</span><input type="text" id="bgAge" placeholder="e.g. 25" /></label>
