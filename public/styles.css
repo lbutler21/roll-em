@@ -432,12 +432,16 @@
   font-size: 0.9rem;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: clamp(14px, 2.5vw, 15px);
   line-height: 1.4;
   background-color: var(--bg-dark);
   /* Birch-bark texture: subtle horizontal striations */
@@ -2876,6 +2880,261 @@ textarea {
 .dnd-tooltip.visible {
   opacity: 1;
   visibility: visible;
+}
+
+/* ========== Responsive: maximize UX across screen sizes ========== */
+
+/* Tablet and below: single column already at 900px; tighten spacing and make tabs scrollable */
+@media (max-width: 700px) {
+  .app {
+    padding: 0;
+  }
+
+  .sheet {
+    padding: 0 0.75rem 1rem;
+  }
+
+  .char-banner {
+    padding: 0.75rem 1rem;
+  }
+
+  .char-banner-main {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .char-banner-left {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .char-banner-actions {
+    flex-wrap: wrap;
+  }
+
+  /* Tabs: horizontal scroll on small screens so all tabs are reachable */
+  .card-tabs .tabs-nav {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  /* Combat row: stack vertically on narrow screens for clearer reading */
+  .combat-saves-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .combat-saves-row .card-combat {
+    max-width: none;
+  }
+
+  .combat-saves-stack {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .combat-saves-stack .card-saves {
+    max-width: none;
+    flex: 1 1 140px;
+  }
+
+  .combat-saves-row .card-dice--compact {
+    min-width: 0;
+  }
+
+  /* Modals: use most of viewport with safe padding */
+  .modal {
+    padding: 0.75rem;
+    align-items: center;
+  }
+
+  .modal .modal-content {
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  .scene-modal .modal-content {
+    max-width: min(380px, calc(100vw - 1.5rem));
+  }
+
+  .feature-choices-modal-content {
+    max-width: min(480px, calc(100vw - 1.5rem));
+  }
+
+  /* Notepad card: comfortable on small screens */
+  .card-notepad textarea {
+    min-height: 5rem;
+  }
+
+  .notepad-search-row {
+    flex-wrap: wrap;
+  }
+
+  .notepad-search-input {
+    min-width: 0;
+  }
+}
+
+/* Mobile: touch-friendly targets and tighter layout */
+@media (max-width: 600px) {
+  body {
+    font-size: 15px;
+  }
+
+  .sheet {
+    padding: 0 0.5rem 0.75rem;
+  }
+
+  .char-banner {
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .char-portrait-wrap {
+    width: 40px;
+    height: 40px;
+  }
+
+  .card {
+    padding: 0.5rem 0.65rem;
+  }
+
+  .card-saves,
+  .card-abilities,
+  .card-dice,
+  .card-combat,
+  .card-notepad {
+    padding: 0.45rem 0.65rem;
+  }
+
+  /* Touch-friendly: minimum tap target ~44px where possible */
+  .btn,
+  .tab-btn {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.85rem;
+  }
+
+  .tab-btn {
+    min-height: 2.5rem;
+  }
+
+  .btn-sm {
+    min-height: 2.25rem;
+    padding: 0.45rem 0.7rem;
+  }
+
+  .quick-roll,
+  .scene-option {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  input[type="number"],
+  input[type="text"],
+  input[type="url"],
+  select,
+  textarea {
+    min-height: 2.25rem;
+    font-size: 16px; /* avoids iOS zoom on focus */
+  }
+
+  textarea {
+    min-height: 4rem;
+  }
+
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem 0.5rem;
+  }
+
+  .characteristics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .landing-inner {
+    padding: 0 0.5rem;
+  }
+
+  .landing-title {
+    font-size: 1.5rem;
+  }
+
+  .btn-landing-cta {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .dnd-tooltip {
+    max-width: min(320px, calc(100vw - 2rem));
+  }
+}
+
+/* Very small screens (e.g. narrow phones) */
+@media (max-width: 480px) {
+  .sheet {
+    padding: 0 0.4rem 0.6rem;
+  }
+
+  .abilities-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .combat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .characteristics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-auth-links {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .landing-auth-links .btn {
+    width: 100%;
+  }
+}
+
+/* Touch devices: slightly larger hit areas for controls that are often tapped */
+@media (hover: none) and (pointer: coarse) {
+  .save-row,
+  .skill-row {
+    min-height: 2rem;
+    padding: 0.15rem 0;
+  }
+
+  .ability-roll,
+  .skill-roll {
+    min-height: 2rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .scene-option {
+    min-height: 2.5rem;
+  }
+
+  .bg-sub-btn {
+    min-height: 2.25rem;
+  }
 }
 
 /* Print / Save as PDF: hide UI chrome, show only the character sheet */
