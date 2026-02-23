@@ -4,6 +4,7 @@ const API_CREDENTIALS = { credentials: 'include' };
 const THEME_KEY = 'dice-proj-theme';
 const SCENE_KEY = 'dice-proj-scene';
 const SCENE_BG_IMAGE_KEY = 'dice-proj-scene-bg-image';
+const CHARACTER_SCENES_CACHE_KEY = 'dice-proj-character-scenes';
 
 const SCENES = [
   { id: 'default', name: 'Default' },
@@ -48,6 +49,22 @@ function getSceneBgImage() {
     return localStorage.getItem(SCENE_BG_IMAGE_KEY) || '';
   } catch (e) {}
   return '';
+}
+
+function getCharacterScenesCache() {
+  try {
+    return JSON.parse(localStorage.getItem(CHARACTER_SCENES_CACHE_KEY) || '{}');
+  } catch (e) {}
+  return {};
+}
+
+function saveCurrentCharacterSceneToCache() {
+  if (!state.characterId) return;
+  const cache = getCharacterScenesCache();
+  cache[state.characterId] = { scene: getScene(), sceneBgImage: getSceneBgImage() };
+  try {
+    localStorage.setItem(CHARACTER_SCENES_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {}
 }
 
 function setScene(sceneId) {
@@ -659,7 +676,9 @@ function getCharacterFromForm() {
     bgFlaws: getValue('bgFlaws'),
     toolProficiencies: getValue('toolProficiencies'),
     languages: getValue('languages'),
-    portrait: getValue('portrait') || undefined
+    portrait: getValue('portrait') || undefined,
+    scene: getScene(),
+    sceneBgImage: getSceneBgImage() || undefined
   };
 }
 
@@ -710,6 +729,7 @@ function setRaceClassBackgroundFromData(data) {
 
 function loadCharacterIntoForm(data) {
   if (!data) return;
+  saveCurrentCharacterSceneToCache();
   setValue('name', data.name);
   setValue('level', data.level);
   setValue('alignment', data.alignment);
@@ -722,6 +742,12 @@ function loadCharacterIntoForm(data) {
   state.featureChoices = data.featureChoices && typeof data.featureChoices === 'object' ? { ...data.featureChoices } : {};
   state.spellsKnown = Array.isArray(data.spells) ? [...data.spells] : [];
   state.spellSlotsUsed = (data.spellSlotsUsed && typeof data.spellSlotsUsed === 'object') ? JSON.parse(JSON.stringify(data.spellSlotsUsed)) : {};
+
+  try {
+    localStorage.setItem(SCENE_KEY, data.scene || 'default');
+    localStorage.setItem(SCENE_BG_IMAGE_KEY, data.sceneBgImage || '');
+  } catch (e) {}
+  setScene(data.scene || 'default');
 
   const abilities = data.abilities || {};
   ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => {
@@ -779,6 +805,15 @@ function loadCharacterIntoForm(data) {
 
   state.characterId = data.id || null;
   state.character = data;
+  const cache = getCharacterScenesCache();
+  const cached = data.id && cache[data.id];
+  if (cached) {
+    try {
+      localStorage.setItem(SCENE_KEY, cached.scene || 'default');
+      localStorage.setItem(SCENE_BG_IMAGE_KEY, cached.sceneBgImage || '');
+    } catch (e) {}
+    setScene(cached.scene || 'default');
+  }
   updateModifiers();
   updateBackgroundDisplay();
 }
