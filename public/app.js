@@ -819,9 +819,86 @@ function roll(diceNotation) {
   return { rolls, modifier, total, notation: diceNotation };
 }
 
+/** Pool of dice for mixed roll: array of sides, e.g. [4, 6, 6, 8] => 1d4 + 2d6 + 1d8 */
+const mixedDicePool = [];
+
+function mixedPoolNotation(pool) {
+  if (!pool.length) return '';
+  const counts = {};
+  pool.forEach((sides) => { counts[sides] = (counts[sides] || 0) + 1; });
+  return Object.entries(counts).sort((a, b) => Number(a[0]) - Number(b[0])).map(([s, n]) => `${n}d${s}`).join(' + ');
+}
+
+function rollMixedPool(modifier = 0) {
+  if (mixedDicePool.length === 0) return null;
+  const rolls = [];
+  let total = 0;
+  mixedDicePool.forEach((sides) => {
+    const r = 1 + Math.floor(Math.random() * sides);
+    rolls.push(r);
+    total += r;
+  });
+  total += modifier;
+  const notation = mixedPoolNotation(mixedDicePool) + (modifier !== 0 ? (modifier >= 0 ? ' + ' : ' ') + modifier : '');
+  return { rolls, modifier, total, notation };
+}
+
+function renderMixedPool() {
+  const el = document.getElementById('mixed-pool-list');
+  if (!el) return;
+  if (mixedDicePool.length === 0) {
+    el.innerHTML = '<span class="mixed-pool-empty">No dice in pool. Add dice below.</span>';
+    return;
+  }
+  const notation = mixedPoolNotation(mixedDicePool);
+  const bySides = {};
+  mixedDicePool.forEach((sides, index) => {
+    if (!bySides[sides]) bySides[sides] = [];
+    bySides[sides].push(index);
+  });
+  el.innerHTML = Object.entries(bySides).sort((a, b) => Number(a[0]) - Number(b[0])).map(([sides, indices]) =>
+    indices.map((i) => `<button type="button" class="mixed-pool-chip" data-index="${i}" title="Remove this die">d${sides} ×</button>`).join('')
+  ).join('');
+  el.querySelectorAll('.mixed-pool-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.index, 10);
+      mixedDicePool.splice(idx, 1);
+      renderMixedPool();
+    });
+  });
+}
+
+const ROLL_HISTORY_MAX = 10;
+const rollHistory = [];
+
+function addToRollHistory(entry) {
+  rollHistory.unshift(entry);
+  if (rollHistory.length > ROLL_HISTORY_MAX) rollHistory.length = ROLL_HISTORY_MAX;
+  renderRollHistory();
+}
+
+function renderRollHistory() {
+  const list = document.getElementById('roll-history-list');
+  if (!list) return;
+  const parts = (entry) => {
+    const modStr = entry.modifier !== 0 ? (entry.modifier > 0 ? ' + ' : ' ') + entry.modifier : '';
+    return `${entry.notation} → [${entry.rolls.join(' + ')}]${modStr} = ${entry.total}`;
+  };
+  list.innerHTML = rollHistory.length === 0
+    ? '<li class="roll-history-empty">No rolls yet</li>'
+    : rollHistory.map((e) => `<li><span class="roll-history-label">${e.label}</span> <span class="roll-history-detail">${parts(e)}</span></li>`).join('');
+}
+
 function showDiceResult(result, label) {
   const el = document.getElementById('dice-result');
   if (!el) return;
+  addToRollHistory({
+    label: label || 'Roll',
+    notation: result.notation,
+    total: result.total,
+    rolls: result.rolls,
+    modifier: result.modifier
+  });
   const parts = result.rolls.join(' + ');
   const modStr = result.modifier !== 0 ? (result.modifier > 0 ? ' + ' : ' ') + result.modifier : '';
   el.innerHTML = `
@@ -889,6 +966,66 @@ document.querySelectorAll('.quick-roll').forEach(btn => {
     if (result) showDiceResult(result, btn.dataset.dice);
   });
 });
+
+document.querySelectorAll('.mixed-add-die').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mixedDicePool.push(parseInt(btn.dataset.sides, 10));
+    renderMixedPool();
+  });
+});
+document.getElementById('btn-clear-mixed-pool')?.addEventListener('click', () => {
+  mixedDicePool.length = 0;
+  renderMixedPool();
+});
+document.getElementById('btn-roll-mixed')?.addEventListener('click', () => {
+  const mod = parseInt(document.getElementById('mixed-modifier')?.value, 10) || 0;
+  const result = rollMixedPool(mod);
+  if (result) showDiceResult(result, 'Mixed');
+});
+renderMixedPool();
+
+document.getElementById('btn-clear-history')?.addEventListener('click', () => {
+  rollHistory.length = 0;
+  renderRollHistory();
+});
+
+(function initRollHistoryToggle() {
+  const container = document.getElementById('roll-history');
+  const toggleBtn = document.getElementById('btn-toggle-history');
+  const title = container?.querySelector('.roll-history-title');
+  const key = 'dice-proj-roll-history-collapsed';
+  const collapsed = () => localStorage.getItem(key) === '1';
+
+  function setCollapsed(c) {
+    if (!container) return;
+    container.classList.toggle('roll-history--collapsed', c);
+    toggleBtn?.setAttribute('aria-expanded', c ? 'false' : 'true');
+    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+  }
+
+  toggleBtn?.addEventListener('click', () => setCollapsed(!container.classList.contains('roll-history--collapsed')));
+  title?.addEventListener('click', () => setCollapsed(!container.classList.contains('roll-history--collapsed')));
+  setCollapsed(collapsed());
+})();
+
+(function initMixedDiceToggle() {
+  const container = document.getElementById('mixed-dice');
+  const toggleBtn = document.getElementById('btn-toggle-mixed-dice');
+  const title = container?.querySelector('.mixed-dice-title');
+  const key = 'dice-proj-mixed-dice-collapsed';
+  const collapsed = () => localStorage.getItem(key) === '1';
+
+  function setCollapsed(c) {
+    if (!container) return;
+    container.classList.toggle('mixed-dice--collapsed', c);
+    toggleBtn?.setAttribute('aria-expanded', c ? 'false' : 'true');
+    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+  }
+
+  toggleBtn?.addEventListener('click', () => setCollapsed(!container.classList.contains('mixed-dice--collapsed')));
+  title?.addEventListener('click', () => setCollapsed(!container.classList.contains('mixed-dice--collapsed')));
+  setCollapsed(collapsed());
+})();
 
 document.getElementById('btn-manage')?.addEventListener('click', () => {
   const deleteBtn = document.getElementById('btn-delete-character');

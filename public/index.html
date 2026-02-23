@@ -248,7 +248,7 @@
       <section class="card card-skills">
         <h2>Skills</h2>
         <div class="skills-list">
-          <label class="skill-row"><input type="checkbox" id="skill-acrobatics" /> <span class="skill-tooltip-trigger" data-skill="acrobatics">Acrobatics</span> <span class="skill-ability">(DEX)</span> <span id="skill-mod-acrobatics">+0</span> <button type="button" class="skill-roll" data-skill="acrobatics" data-ability="dex">Roll</button></label>
+          <label class="skill-row"><input type="checkbox" id="skill-acrobatics" /> <span class="skill-tooltip-trigger" data-skill="acrobatics">Acrobatics</span> (DEX) <span id="skill-mod-acrobatics">+0</span> <button type="button" class="skill-roll" data-skill="acrobatics" data-ability="dex">Roll</button></label>
           <label class="skill-row"><input type="checkbox" id="skill-animalHandling" /> <span class="skill-tooltip-trigger" data-skill="animalHandling">Animal Handling</span> (WIS) <span id="skill-mod-animalHandling">+0</span> <button type="button" class="skill-roll" data-skill="animalHandling" data-ability="wis">Roll</button></label>
           <label class="skill-row"><input type="checkbox" id="skill-arcana" /> <span class="skill-tooltip-trigger" data-skill="arcana">Arcana</span> (INT) <span id="skill-mod-arcana">+0</span> <button type="button" class="skill-roll" data-skill="arcana" data-ability="int">Roll</button></label>
           <label class="skill-row"><input type="checkbox" id="skill-athletics" /> <span class="skill-tooltip-trigger" data-skill="athletics">Athletics</span> (STR) <span id="skill-mod-athletics">+0</span> <button type="button" class="skill-roll" data-skill="athletics" data-ability="str">Roll</button></label>
@@ -371,10 +371,52 @@
             <button type="button" class="quick-roll" data-dice="1d10">d10</button>
             <button type="button" class="quick-roll" data-dice="1d12">d12</button>
             <button type="button" class="quick-roll" data-dice="1d20">d20</button>
+            <button type="button" class="quick-roll" data-dice="1d100">d100</button>
             <button type="button" class="quick-roll" data-dice="2d6">2d6</button>
           </div>
         </div>
+        <div id="mixed-dice" class="mixed-dice">
+          <div class="mixed-dice-header">
+            <button type="button" id="btn-toggle-mixed-dice" class="mixed-dice-toggle" title="Minimize / Expand" aria-expanded="true">
+              <span class="mixed-dice-chevron" aria-hidden="true">▼</span>
+            </button>
+            <h3 class="mixed-dice-title">Roll multiple types at once</h3>
+          </div>
+          <div class="mixed-dice-body">
+            <p class="mixed-dice-hint">Add dice to the pool, then roll. Click a die in the pool to remove it.</p>
+            <div id="mixed-pool-list" class="mixed-pool-list"></div>
+            <div class="mixed-dice-actions">
+              <div class="mixed-dice-add">
+                <span class="mixed-dice-add-label">Add:</span>
+                <button type="button" class="mixed-add-die" data-sides="4">d4</button>
+                <button type="button" class="mixed-add-die" data-sides="6">d6</button>
+                <button type="button" class="mixed-add-die" data-sides="8">d8</button>
+                <button type="button" class="mixed-add-die" data-sides="10">d10</button>
+                <button type="button" class="mixed-add-die" data-sides="12">d12</button>
+                <button type="button" class="mixed-add-die" data-sides="20">d20</button>
+                <button type="button" class="mixed-add-die" data-sides="100">d100</button>
+              </div>
+              <div class="mixed-dice-roll-row">
+                <label class="mixed-modifier-label">Modifier <input type="number" id="mixed-modifier" value="0" class="mixed-modifier-input" /></label>
+                <button type="button" id="btn-clear-mixed-pool" class="btn btn-ghost btn-sm">Clear pool</button>
+                <button type="button" id="btn-roll-mixed" class="btn btn-primary">Roll pool</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="dice-result" class="dice-result"></div>
+        <div id="roll-history" class="roll-history">
+          <div class="roll-history-header">
+            <button type="button" id="btn-toggle-history" class="roll-history-toggle" title="Minimize / Expand" aria-expanded="true">
+              <span class="roll-history-chevron" aria-hidden="true">▼</span>
+            </button>
+            <h3 class="roll-history-title">Roll history</h3>
+            <button type="button" id="btn-clear-history" class="btn btn-ghost btn-sm">Clear</button>
+          </div>
+          <div class="roll-history-body">
+            <ul id="roll-history-list" class="roll-history-list"></ul>
+          </div>
+        </div>
       </section>
 
       <!-- Tabbed content -->
