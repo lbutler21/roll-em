@@ -2111,9 +2111,51 @@ function renderReferenceDetail() {
       (meta ? '<div class="ref-meta">' + meta + '</div>' : '') +
       '<div class="ref-desc">' + escapeHtml(item.desc || '') + '</div>';
   } else if (refState.category === 'rules') {
-    detailEl.innerHTML = '<h4>' + escapeHtml(item.title) + '</h4>' +
-      '<div class="ref-desc">' + escapeHtml(item.content || '') + '</div>';
+    const sections = parseRuleSections(item.content || '');
+    const sectionHtml = sections.map((sec, i) => {
+      const id = 'ref-section-' + i;
+      const escapedTitle = escapeHtml(sec.title);
+      const escapedBody = escapeHtml(sec.body).replace(/\n/g, '<br>');
+      const collapsed = i > 0 ? ' ref-detail-section--collapsed' : '';
+      return '<div class="ref-detail-section' + collapsed + '" data-section-index="' + i + '">' +
+        '<button type="button" class="ref-detail-section-header" aria-expanded="' + (i === 0 ? 'true' : 'false') + '" aria-controls="' + id + '" id="' + id + '-head">' +
+        '<span class="ref-detail-section-chevron" aria-hidden="true">▼</span>' +
+        '<span class="ref-detail-section-title">' + escapedTitle + '</span></button>' +
+        '<div class="ref-detail-section-body" id="' + id + '" role="region" aria-labelledby="' + id + '-head">' +
+        '<div class="ref-desc">' + escapedBody + '</div></div></div>';
+    }).join('');
+    detailEl.innerHTML = '<h4>' + escapeHtml(item.title) + '</h4>' + sectionHtml;
+    detailEl.querySelectorAll('.ref-detail-section-header').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const section = btn.closest('.ref-detail-section');
+        if (section) {
+          section.classList.toggle('ref-detail-section--collapsed');
+          btn.setAttribute('aria-expanded', section.classList.contains('ref-detail-section--collapsed') ? 'false' : 'true');
+        }
+      });
+    });
   }
+}
+
+/** Split rule content by ### (or any #) headings; text after each # line is collapsible up to the next # line. */
+function parseRuleSections(content) {
+  if (!content || !content.trim()) return [{ title: 'Content', body: '' }];
+  const parts = content.split(/\n(?=#+\s)/);
+  const sections = [];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim();
+    if (!part) continue;
+    if (part.startsWith('#')) {
+      const firstNewline = part.indexOf('\n');
+      const titleLine = firstNewline >= 0 ? part.slice(0, firstNewline) : part;
+      const title = titleLine.replace(/^#+\s*/, '').trim();
+      const body = firstNewline >= 0 ? part.slice(firstNewline + 1).trim() : '';
+      sections.push({ title: title || 'Section', body });
+    } else {
+      sections.push({ title: 'Overview', body: part });
+    }
+  }
+  return sections.length ? sections : [{ title: 'Content', body: content.trim() }];
 }
 
 document.getElementById('btn-reference')?.addEventListener('click', openReference);

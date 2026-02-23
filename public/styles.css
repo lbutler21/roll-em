@@ -1255,6 +1255,72 @@ body {
   white-space: pre-line;
 }
 
+/* Collapsible sections in rules detail (by ### headings) */
+.ref-detail-section {
+  margin-top: 0.5rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ref-detail-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: rgba(0,0,0,0.04);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.ref-detail-section-header:hover {
+  background: rgba(0,0,0,0.07);
+}
+
+.ref-detail-section-chevron {
+  display: inline-block;
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  transition: transform 0.2s ease;
+}
+
+.ref-detail-section--collapsed .ref-detail-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.ref-detail-section-title {
+  flex: 1;
+}
+
+.ref-detail-section-body {
+  padding: 0.5rem 0.75rem;
+  background: var(--card-bg);
+  border-top: 1px solid var(--grey-border);
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.ref-detail-section--collapsed .ref-detail-section-body {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top: none;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.ref-detail-section-body .ref-desc {
+  margin: 0;
+  white-space: pre-line;
+}
+
 .reference-credit {
   margin-top: 0.75rem;
   font-size: 0.8rem;
