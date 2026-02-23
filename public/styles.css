@@ -113,6 +113,10 @@
   --accent-light: #3d8b3d;
   --accent-dark: #1e4a1e;
   --accent-rgb: 45, 106, 45;
+  --bg-dark: #3d3228;
+  --bg-darker: #2d251e;
+  --card-bg: #f5f0e8;
+  --grey-border: #c4b8a8;
 }
 
 [data-scene="ocean"] {
@@ -120,6 +124,10 @@
   --accent-light: #2a7ab8;
   --accent-dark: #143d5c;
   --accent-rgb: 30, 90, 138;
+  --bg-dark: #252d35;
+  --bg-darker: #1a2229;
+  --card-bg: #e8eef4;
+  --grey-border: #a8b8c4;
 }
 
 [data-scene="royal"] {
@@ -127,6 +135,10 @@
   --accent-light: #7b3db8;
   --accent-dark: #3d1e5c;
   --accent-rgb: 92, 45, 138;
+  --bg-dark: #2a2435;
+  --bg-darker: #1e1a29;
+  --card-bg: #f0e8f5;
+  --grey-border: #c4a8b8;
 }
 
 [data-scene="ember"] {
@@ -134,6 +146,39 @@
   --accent-light: #e67a3a;
   --accent-dark: #9e4018;
   --accent-rgb: 196, 92, 30;
+  --bg-dark: #352a25;
+  --bg-darker: #291e1a;
+  --card-bg: #f5efe8;
+  --grey-border: #c4b0a8;
+}
+
+/* Light theme + scene: lighter backgrounds, keep contrast */
+[data-theme="light"][data-scene="forest"] {
+  --bg-dark: #e8e2d6;
+  --bg-darker: #d6cfc0;
+  --card-bg: #fdfbf7;
+  --grey-border: #c4b8a8;
+}
+
+[data-theme="light"][data-scene="ocean"] {
+  --bg-dark: #dce4ec;
+  --bg-darker: #c8d4e0;
+  --card-bg: #f4f8fc;
+  --grey-border: #a8b8c4;
+}
+
+[data-theme="light"][data-scene="royal"] {
+  --bg-dark: #e6e0ef;
+  --bg-darker: #d4cce0;
+  --card-bg: #faf8fc;
+  --grey-border: #c4a8b8;
+}
+
+[data-theme="light"][data-scene="ember"] {
+  --bg-dark: #efe8e0;
+  --bg-darker: #e0d6c8;
+  --card-bg: #fdfaf7;
+  --grey-border: #c4b0a8;
 }
 
 * {
