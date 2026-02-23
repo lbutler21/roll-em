@@ -340,20 +340,10 @@
           <label class="save-row"><input type="checkbox" id="save-cha" /> CHA <span id="save-mod-cha">+0</span></label>
         </div>
       </section>
-
-      <!-- Proficiency, Speed, Inspiration -->
-      <section class="card card-quick-stats">
-        <div class="quick-stats-grid">
-          <div class="quick-stat"><label>PB</label><span id="prof-display" class="stat-value">+2</span></div>
-          <div class="quick-stat"><label>Speed</label><span class="quick-stat-inline"><input type="number" id="speed" min="0" value="30" class="stat-input" /> ft.</span></div>
-          <div class="quick-stat"><label>Inspiration</label><input type="number" id="inspiration" min="0" value="0" class="stat-input" /></div>
-        </div>
-      </section>
-      </div>
       </div>
 
-      <!-- Dice roller -->
-      <section class="card card-dice">
+      <!-- Dice roller (compact, beside Saving Throws) -->
+      <section class="card card-dice card-dice--compact">
         <h2>Dice Roller</h2>
         <div class="dice-controls">
           <div class="dice-row">
@@ -424,6 +414,16 @@
           <div class="roll-history-body">
             <ul id="roll-history-list" class="roll-history-list"></ul>
           </div>
+        </div>
+      </section>
+      </div>
+
+      <!-- PB / Speed / Inspiration (below Dice Roller, above Actions) -->
+      <section class="card card-quick-stats card-quick-stats--below-dice">
+        <div class="quick-stats-grid">
+          <div class="quick-stat"><label>PB</label><span id="prof-display" class="stat-value">+2</span></div>
+          <div class="quick-stat"><label>Speed</label><span class="quick-stat-inline"><input type="number" id="speed" min="0" value="30" class="stat-input" /> ft.</span></div>
+          <div class="quick-stat"><label>Inspiration</label><input type="number" id="inspiration" min="0" value="0" class="stat-input" /></div>
         </div>
       </section>
 
