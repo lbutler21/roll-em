@@ -6,6 +6,7 @@
   <title>5e D&D Character Sheet (2014 rules)</title>
   <script>
     (function(){try{var t=localStorage.getItem('dice-proj-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();
+    (function(){try{var s=localStorage.getItem('dice-proj-scene');if(s)document.documentElement.setAttribute('data-scene',s);}catch(e){}})();
   </script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,7 +91,10 @@
             <button type="button" id="btn-logout" class="btn btn-banner">Log out</button>
           </span>
           <button type="button" id="btn-manage" class="btn btn-banner" title="Manage character">Manage</button>
-          <button type="button" id="btn-theme-toggle" class="btn btn-ghost btn-theme-toggle no-print" title="Switch to light mode" aria-label="Theme">☀</button>
+          <div class="banner-theme-scene-wrap">
+            <button type="button" id="btn-theme-toggle" class="btn btn-ghost btn-theme-toggle no-print" title="Switch to light mode" aria-label="Theme">☀</button>
+            <button type="button" id="btn-change-scene" class="btn btn-ghost btn-change-scene no-print" title="Choose color scheme">Change Scene</button>
+          </div>
         </div>
       </div>
       <div class="char-banner-bar">
@@ -528,6 +532,15 @@
 
       </div>
     </main>
+
+    <!-- Scene picker modal (color scheme) -->
+    <div id="scene-modal" class="modal scene-modal hidden" aria-hidden="true">
+      <div class="modal-content scene-modal-content">
+        <h3>Choose color scheme</h3>
+        <div id="scene-options" class="scene-options"></div>
+        <button type="button" id="btn-close-scene" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
 
     <!-- Portrait lightbox (click banner portrait to view larger) -->
     <div id="portrait-lightbox" class="modal portrait-lightbox hidden" aria-hidden="true">

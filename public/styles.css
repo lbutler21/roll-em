@@ -9,6 +9,7 @@
   --accent: #c41e3a;
   --accent-light: #e63950;
   --accent-dark: #9e1830;
+  --accent-rgb: 196, 30, 58;
   --danger: #b91c1c;
   --success: #15803d;
   --shadow: rgba(0, 0, 0, 0.15);
@@ -41,13 +42,21 @@
 }
 
 [data-theme="light"] .btn-banner:hover {
-  background: rgba(196, 30, 58, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 
 [data-theme="light"] .char-banner-actions .btn-ghost:hover {
-  background: rgba(196, 30, 58, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   border-color: var(--accent);
+}
+
+/* Theme + Scene wrapper (stack theme toggle above Change Scene) */
+.banner-theme-scene-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .btn-theme-toggle {
@@ -55,6 +64,76 @@
   font-size: 1.1rem;
   line-height: 1;
   min-width: 2rem;
+}
+
+.btn-change-scene {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  white-space: nowrap;
+}
+
+/* Scene picker modal */
+.scene-modal .modal-content {
+  max-width: 320px;
+}
+
+.scene-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.scene-option {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--grey-border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.scene-option:hover {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.06);
+}
+
+.scene-option[data-active="true"] {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Scene color schemes (data-scene on <html>) */
+[data-scene="forest"] {
+  --accent: #2d6a2d;
+  --accent-light: #3d8b3d;
+  --accent-dark: #1e4a1e;
+  --accent-rgb: 45, 106, 45;
+}
+
+[data-scene="ocean"] {
+  --accent: #1e5a8a;
+  --accent-light: #2a7ab8;
+  --accent-dark: #143d5c;
+  --accent-rgb: 30, 90, 138;
+}
+
+[data-scene="royal"] {
+  --accent: #5c2d8a;
+  --accent-light: #7b3db8;
+  --accent-dark: #3d1e5c;
+  --accent-rgb: 92, 45, 138;
+}
+
+[data-scene="ember"] {
+  --accent: #c45c1e;
+  --accent-light: #e67a3a;
+  --accent-dark: #9e4018;
+  --accent-rgb: 196, 92, 30;
 }
 
 * {
@@ -383,7 +462,7 @@ body {
 }
 
 .btn-banner:hover {
-  background: rgba(196, 30, 58, 0.15);
+  background: rgba(var(--accent-rgb), 0.15);
 }
 
 .char-banner-bar {
@@ -427,7 +506,7 @@ body {
 .char-banner-actions .btn-ghost:hover {
   color: var(--banner-text);
   border-color: var(--accent);
-  background: rgba(196, 30, 58, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .save-status {
@@ -520,7 +599,7 @@ body {
 }
 
 .btn-ghost:hover {
-  background: rgba(196, 30, 58, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1200,11 +1279,11 @@ body {
 }
 
 .ref-list-item:hover {
-  background: rgba(196, 30, 58, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .ref-list-item.selected {
-  background: rgba(196, 30, 58, 0.15);
+  background: rgba(var(--accent-rgb), 0.15);
   color: var(--accent);
   font-weight: 600;
 }
@@ -1390,11 +1469,11 @@ body {
 }
 
 .spell-list-item:hover {
-  background: rgba(196, 30, 58, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .spell-list-item.selected {
-  background: rgba(196, 30, 58, 0.15);
+  background: rgba(var(--accent-rgb), 0.15);
   color: var(--accent);
   font-weight: 600;
 }
@@ -2128,7 +2207,7 @@ textarea {
 
 .inventory-add-item:hover {
   border-color: var(--accent);
-  background: rgba(196, 30, 58, 0.06);
+  background: rgba(var(--accent-rgb), 0.06);
 }
 
 .inventory-add-item-name {
@@ -2192,7 +2271,7 @@ textarea {
 }
 
 #character-list li:hover {
-  background: rgba(196, 30, 58, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 #character-list .char-list-empty {
@@ -2317,12 +2396,12 @@ textarea {
 
 .builder-option:hover {
   border-color: var(--accent);
-  background: rgba(196, 30, 58, 0.06);
+  background: rgba(var(--accent-rgb), 0.06);
 }
 
 .builder-option.selected {
   border-color: var(--accent);
-  background: rgba(196, 30, 58, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent);
 }
 

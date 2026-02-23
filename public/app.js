@@ -2,6 +2,15 @@ const API_BASE = '';
 const API_CREDENTIALS = { credentials: 'include' };
 
 const THEME_KEY = 'dice-proj-theme';
+const SCENE_KEY = 'dice-proj-scene';
+
+const SCENES = [
+  { id: 'default', name: 'Default' },
+  { id: 'forest', name: 'Forest' },
+  { id: 'ocean', name: 'Ocean' },
+  { id: 'royal', name: 'Royal' },
+  { id: 'ember', name: 'Ember' },
+];
 
 function getTheme() {
   try {
@@ -24,7 +33,47 @@ function setTheme(theme) {
   });
 }
 
+function getScene() {
+  try {
+    const s = localStorage.getItem(SCENE_KEY);
+    if (SCENES.some(sc => sc.id === s)) return s;
+  } catch (e) {}
+  return 'default';
+}
+
+function setScene(sceneId) {
+  sceneId = SCENES.some(sc => sc.id === sceneId) ? sceneId : 'default';
+  if (sceneId === 'default') document.documentElement.removeAttribute('data-scene');
+  else document.documentElement.setAttribute('data-scene', sceneId);
+  try { localStorage.setItem(SCENE_KEY, sceneId); } catch (e) {}
+  renderSceneOptions();
+}
+
+function openSceneModal() {
+  renderSceneOptions();
+  const modal = document.getElementById('scene-modal');
+  if (modal) { modal.classList.remove('hidden'); modal.setAttribute('aria-hidden', 'false'); }
+}
+
+function closeSceneModal() {
+  const modal = document.getElementById('scene-modal');
+  if (modal) { modal.classList.add('hidden'); modal.setAttribute('aria-hidden', 'true'); }
+}
+
+function renderSceneOptions() {
+  const container = document.getElementById('scene-options');
+  if (!container) return;
+  const current = getScene();
+  container.innerHTML = SCENES.map(sc =>
+    `<button type="button" class="scene-option" data-scene="${sc.id}" data-active="${sc.id === current}">${sc.name}</button>`
+  ).join('');
+  container.querySelectorAll('.scene-option').forEach(btn => {
+    btn.addEventListener('click', () => setScene(btn.dataset.scene));
+  });
+}
+
 setTheme(getTheme());
+setScene(getScene());
 
 let authUser = null;
 let showSheetWithoutAuth = false;
@@ -1212,6 +1261,9 @@ function toggleTheme() {
 }
 document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
 document.getElementById('landing-theme-toggle')?.addEventListener('click', toggleTheme);
+document.getElementById('btn-change-scene')?.addEventListener('click', openSceneModal);
+document.getElementById('btn-close-scene')?.addEventListener('click', closeSceneModal);
+document.getElementById('scene-modal')?.addEventListener('click', (e) => { if (e.target.id === 'scene-modal') closeSceneModal(); });
 document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
 document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
 document.getElementById('btn-start-now')?.addEventListener('click', () => {
