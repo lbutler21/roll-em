@@ -650,6 +650,7 @@ function getCharacterFromForm() {
       failures: parseInt(getValue('deathFailures'), 10) || 0
     },
     attacks: getValue('attacks'),
+    actionsNotepad: getValue('actions-notepad'),
     equipment: getValue('equipment'),
     spells: [...(state.spellsKnown || [])],
     spellSlotsUsed: JSON.parse(JSON.stringify(state.spellSlotsUsed || {})),
@@ -775,6 +776,7 @@ function loadCharacterIntoForm(data) {
   setValue('deathSuccesses', data.deathSaves?.successes ?? 0);
   setValue('deathFailures', data.deathSaves?.failures ?? 0);
   setValue('attacks', data.attacks ?? '');
+  setValue('actions-notepad', data.actionsNotepad ?? '');
   setValue('equipment', data.equipment ?? '');
   setValue('notesOrganizations', data.notesOrganizations ?? '');
   setValue('notesAllies', data.notesAllies ?? '');
@@ -1391,6 +1393,32 @@ document.getElementById('scene-custom-use-url')?.addEventListener('click', () =>
 });
 document.getElementById('scene-bg-url')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('scene-custom-use-url')?.click();
+});
+
+function findInNotepad() {
+  const notepadEl = document.getElementById('actions-notepad');
+  const searchInput = document.getElementById('notepad-search');
+  if (!notepadEl || !searchInput) return;
+  const keyword = searchInput.value.trim();
+  if (!keyword) return;
+  const text = notepadEl.value;
+  const lower = text.toLowerCase();
+  const kw = keyword.toLowerCase();
+  let start = notepadEl.selectionEnd ?? 0;
+  let idx = lower.indexOf(kw, start);
+  if (idx === -1) idx = lower.indexOf(kw, 0);
+  if (idx === -1) {
+    alert('No matches found.');
+    return;
+  }
+  notepadEl.focus();
+  notepadEl.setSelectionRange(idx, idx + keyword.length);
+  notepadEl.scrollTop = Math.max(0, notepadEl.scrollHeight * (idx / text.length) - notepadEl.clientHeight / 2);
+}
+
+document.getElementById('notepad-find-btn')?.addEventListener('click', findInNotepad);
+document.getElementById('notepad-search')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); findInNotepad(); }
 });
 document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
 document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
