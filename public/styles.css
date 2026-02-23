@@ -927,6 +927,64 @@ body {
   margin: 0;
 }
 
+.spell-slots-counter-wrap {
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-top: 1px solid var(--grey-border);
+}
+
+.spell-slots-counter-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.25rem 0;
+}
+
+.spell-slots-counter-hint {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin: 0 0 0.5rem 0;
+}
+
+.spell-slots-counter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.spell-slots-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.spell-slots-counter-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  min-width: 4.5rem;
+}
+
+.spell-slots-counter-boxes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.spell-slots-counter-boxes .spell-slot-cb {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.spell-slots-counter-summary {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin-left: 0.25rem;
+}
+
 .spells-panel-wrap {
   display: flex;
   flex-direction: column;

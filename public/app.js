@@ -461,6 +461,26 @@ const SPELL_SLOTS_FULL = [
   [4,3,3,3,2,1,1,1,1], [4,3,3,3,3,1,1,1,1], [4,3,3,3,3,2,1,1,1], [4,3,3,3,3,2,2,1,1,1]
 ];
 
+/** Returns array of 9 slot counts [1st, 2nd, ... 9th]. Warlock: one level has slots, rest 0. */
+function getSpellSlotsArray(classId, level) {
+  const lvl = Math.min(20, Math.max(1, level || 1));
+  const out = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  if (!SPELLCASTING_CLASSES.includes(classId)) return out;
+  if (classId === 'warlock') {
+    const count = lvl >= 11 ? 3 : lvl >= 2 ? 2 : 1;
+    const slotLevel = lvl >= 9 ? 5 : lvl >= 7 ? 4 : lvl >= 5 ? 3 : lvl >= 3 ? 2 : 1;
+    out[slotLevel - 1] = count;
+    return out;
+  }
+  const halfCasters = ['paladin', 'ranger', 'artificer'];
+  const slotLevel = halfCasters.includes(classId) ? Math.floor(lvl / 2) : lvl;
+  if (slotLevel < 1) return out;
+  const row = SPELL_SLOTS_FULL[Math.min(slotLevel, 20) - 1];
+  if (!row || !row.length) return out;
+  row.forEach((n, i) => { if (i < 9) out[i] = n || 0; });
+  return out;
+}
+
 function getSpellSlotsText(classId, level) {
   const lvl = Math.min(20, Math.max(1, level || 1));
   if (!SPELLCASTING_CLASSES.includes(classId)) return '';
@@ -521,7 +541,9 @@ const state = {
   characterId: null,
   character: null,
   featureChoices: {},
-  spellsKnown: []
+  spellsKnown: [],
+  /** spellSlotsUsed[level] = array of booleans (true = used). Level 1–9. */
+  spellSlotsUsed: {}
 };
 
 function getCharacterFromForm() {
@@ -583,6 +605,7 @@ function getCharacterFromForm() {
     attacks: getValue('attacks'),
     equipment: getValue('equipment'),
     spells: [...(state.spellsKnown || [])],
+    spellSlotsUsed: JSON.parse(JSON.stringify(state.spellSlotsUsed || {})),
     customFeatures: getValue('customFeatures'),
     featuresTraits: getValue('customFeatures'),
     featureChoices: { ...state.featureChoices },
@@ -668,6 +691,7 @@ function loadCharacterIntoForm(data) {
   setValue('customFeatures', data.customFeatures != null ? data.customFeatures : (data.featuresTraits || ''));
   state.featureChoices = data.featureChoices && typeof data.featureChoices === 'object' ? { ...data.featureChoices } : {};
   state.spellsKnown = Array.isArray(data.spells) ? [...data.spells] : [];
+  state.spellSlotsUsed = (data.spellSlotsUsed && typeof data.spellSlotsUsed === 'object') ? JSON.parse(JSON.stringify(data.spellSlotsUsed)) : {};
 
   const abilities = data.abilities || {};
   ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => {
@@ -1394,6 +1418,7 @@ document.querySelectorAll('.bg-sub-btn').forEach(btn => {
 function resetToBlankCharacter() {
   state.characterId = null;
   state.spellsKnown = [];
+  state.spellSlotsUsed = {};
   loadCharacterIntoForm({
     name: '',
     level: 1,
@@ -1900,6 +1925,60 @@ function renderSpellsTab() {
 
   const slotsEl = document.getElementById('spells-slots-display');
   if (slotsEl) slotsEl.textContent = getSpellSlotsText(classId, charLevel) ? ('Spell slots: ' + getSpellSlotsText(classId, charLevel)) : '';
+
+  const slotCounterWrap = document.getElementById('spell-slots-counter-wrap');
+  const slotCounterList = document.getElementById('spell-slots-counter-list');
+  const slotCounts = getSpellSlotsArray(classId, charLevel);
+  const hasSlots = slotCounts.some(n => n > 0);
+  if (slotCounterWrap) slotCounterWrap.classList.toggle('hidden', !hasSlots);
+  if (slotCounterList && hasSlots) {
+    slotCounterList.innerHTML = '';
+    const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+    slotCounts.forEach((total, levelIndex) => {
+      if (total < 1) return;
+      const level = levelIndex + 1;
+      let used = state.spellSlotsUsed[level];
+      if (!Array.isArray(used)) used = [];
+      used = used.slice(0, total);
+      while (used.length < total) used.push(false);
+      state.spellSlotsUsed[level] = used;
+
+      const row = document.createElement('div');
+      row.className = 'spell-slots-counter-row';
+      const label = document.createElement('span');
+      label.className = 'spell-slots-counter-label';
+      label.textContent = ordinals[levelIndex] + ' level:';
+      row.appendChild(label);
+      const boxes = document.createElement('span');
+      boxes.className = 'spell-slots-counter-boxes';
+      for (let i = 0; i < total; i++) {
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = 'spell-slot-' + level + '-' + i;
+        cb.className = 'spell-slot-cb';
+        cb.setAttribute('data-level', String(level));
+        cb.setAttribute('data-index', String(i));
+        cb.checked = !!used[i];
+        cb.title = 'Used';
+        cb.addEventListener('change', () => {
+          state.spellSlotsUsed[level][i] = cb.checked;
+          const sumSpan = row.querySelector('.spell-slots-counter-summary');
+          if (sumSpan) {
+            const usedCount = state.spellSlotsUsed[level].filter(Boolean).length;
+            sumSpan.textContent = usedCount + ' / ' + total + ' used';
+          }
+        });
+        boxes.appendChild(cb);
+      }
+      row.appendChild(boxes);
+      const usedCount = used.filter(Boolean).length;
+      const summary = document.createElement('span');
+      summary.className = 'spell-slots-counter-summary';
+      summary.textContent = usedCount + ' / ' + total + ' used';
+      row.appendChild(summary);
+      slotCounterList.appendChild(row);
+    });
+  }
 
   const availableList = document.getElementById('spells-available-list');
   const knownList = document.getElementById('spells-known-list');
