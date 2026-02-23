@@ -74,7 +74,7 @@
 
 /* Scene picker modal */
 .scene-modal .modal-content {
-  max-width: 320px;
+  max-width: 380px;
 }
 
 .scene-options {
@@ -105,6 +105,50 @@
   background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent);
   font-weight: 600;
+}
+
+.scene-custom-wrap {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--grey-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scene-custom-url-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.scene-custom-url-label {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  flex: 0 0 100%;
+}
+
+.scene-bg-url-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--grey-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+}
+
+.scene-custom-use-url {
+  flex-shrink: 0;
+}
+
+.scene-custom-remove {
+  font-size: 0.85rem;
+}
+
+.scene-custom-remove.hidden {
+  display: none;
 }
 
 /* Scene color schemes (data-scene on <html>) */
@@ -179,6 +223,14 @@
   --bg-darker: #e0d6c8;
   --card-bg: #fdfaf7;
   --grey-border: #c4b0a8;
+}
+
+/* Custom image background (image set via --scene-bg-image in JS) */
+[data-scene="custom"] body {
+  background-image: var(--scene-bg-image, none);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 * {

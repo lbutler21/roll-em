@@ -547,6 +547,15 @@
       <div class="modal-content scene-modal-content">
         <h3>Choose color scheme</h3>
         <div id="scene-options" class="scene-options"></div>
+        <div class="scene-custom-wrap">
+          <input type="file" id="scene-bg-file" accept="image/*" class="hidden" aria-label="Choose background image" />
+          <div class="scene-custom-url-row">
+            <label for="scene-bg-url" class="scene-custom-url-label">Image from web</label>
+            <input type="url" id="scene-bg-url" class="scene-bg-url-input" placeholder="https://example.com/image.jpg" />
+            <button type="button" id="scene-custom-use-url" class="btn btn-primary btn-sm">Use URL</button>
+          </div>
+          <button type="button" id="scene-custom-remove" class="btn btn-ghost btn-sm scene-custom-remove">Remove custom image</button>
+        </div>
         <button type="button" id="btn-close-scene" class="btn btn-ghost">Close</button>
       </div>
     </div>

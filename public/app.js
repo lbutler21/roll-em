@@ -3,6 +3,7 @@ const API_CREDENTIALS = { credentials: 'include' };
 
 const THEME_KEY = 'dice-proj-theme';
 const SCENE_KEY = 'dice-proj-scene';
+const SCENE_BG_IMAGE_KEY = 'dice-proj-scene-bg-image';
 
 const SCENES = [
   { id: 'default', name: 'Default' },
@@ -10,6 +11,7 @@ const SCENES = [
   { id: 'ocean', name: 'Ocean' },
   { id: 'royal', name: 'Royal' },
   { id: 'ember', name: 'Ember' },
+  { id: 'custom', name: 'Custom image' },
 ];
 
 function getTheme() {
@@ -41,11 +43,28 @@ function getScene() {
   return 'default';
 }
 
+function getSceneBgImage() {
+  try {
+    return localStorage.getItem(SCENE_BG_IMAGE_KEY) || '';
+  } catch (e) {}
+  return '';
+}
+
 function setScene(sceneId) {
   sceneId = SCENES.some(sc => sc.id === sceneId) ? sceneId : 'default';
   if (sceneId === 'default') document.documentElement.removeAttribute('data-scene');
   else document.documentElement.setAttribute('data-scene', sceneId);
   try { localStorage.setItem(SCENE_KEY, sceneId); } catch (e) {}
+
+  if (sceneId === 'custom') {
+    const stored = getSceneBgImage();
+    if (stored) {
+      const cssVal = stored.startsWith('data:') ? stored : ('"' + stored.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"');
+      document.documentElement.style.setProperty('--scene-bg-image', 'url(' + cssVal + ')');
+    } else document.documentElement.style.setProperty('--scene-bg-image', 'none');
+  } else {
+    document.documentElement.style.removeProperty('--scene-bg-image');
+  }
   renderSceneOptions();
 }
 
@@ -68,8 +87,19 @@ function renderSceneOptions() {
     `<button type="button" class="scene-option" data-scene="${sc.id}" data-active="${sc.id === current}">${sc.name}</button>`
   ).join('');
   container.querySelectorAll('.scene-option').forEach(btn => {
-    btn.addEventListener('click', () => setScene(btn.dataset.scene));
+    btn.addEventListener('click', () => {
+      if (btn.dataset.scene === 'custom') {
+        if (getSceneBgImage()) setScene('custom');
+        else document.getElementById('scene-bg-file')?.click();
+      } else {
+        setScene(btn.dataset.scene);
+      }
+    });
   });
+  const removeBtn = document.getElementById('scene-custom-remove');
+  if (removeBtn) {
+    removeBtn.classList.toggle('hidden', current !== 'custom' || !getSceneBgImage());
+  }
 }
 
 setTheme(getTheme());
@@ -1288,6 +1318,45 @@ document.getElementById('landing-theme-toggle')?.addEventListener('click', toggl
 document.getElementById('btn-change-scene')?.addEventListener('click', openSceneModal);
 document.getElementById('btn-close-scene')?.addEventListener('click', closeSceneModal);
 document.getElementById('scene-modal')?.addEventListener('click', (e) => { if (e.target.id === 'scene-modal') closeSceneModal(); });
+document.getElementById('scene-bg-file')?.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      localStorage.setItem(SCENE_BG_IMAGE_KEY, reader.result);
+      setScene('custom');
+    } catch (err) {
+      if (err.name === 'QuotaExceededError') alert('Image too large to store. Try a smaller image.');
+    }
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+document.getElementById('scene-custom-remove')?.addEventListener('click', () => {
+  try { localStorage.removeItem(SCENE_BG_IMAGE_KEY); } catch (e) {}
+  setScene('default');
+});
+document.getElementById('scene-custom-use-url')?.addEventListener('click', () => {
+  const input = document.getElementById('scene-bg-url');
+  const url = (input?.value || '').trim();
+  if (!url) return;
+  const lower = url.toLowerCase();
+  if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
+    alert('Please enter a valid image URL starting with http:// or https://');
+    return;
+  }
+  try {
+    localStorage.setItem(SCENE_BG_IMAGE_KEY, url);
+    setScene('custom');
+    if (input) input.value = '';
+  } catch (e) {
+    alert('Could not save URL.');
+  }
+});
+document.getElementById('scene-bg-url')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('scene-custom-use-url')?.click();
+});
 document.getElementById('btn-login')?.addEventListener('click', () => openAuthModal('login'));
 document.getElementById('btn-register')?.addEventListener('click', () => openAuthModal('register'));
 document.getElementById('btn-start-now')?.addEventListener('click', () => {
