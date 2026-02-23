@@ -751,10 +751,13 @@ body {
   margin-bottom: 0.35rem;
 }
 
+.card-notepad .notepad-search-row {
+  margin-bottom: 0.5rem;
+}
+
 .card-notepad textarea {
   display: block;
   width: 100%;
-  margin-bottom: 0.5rem;
 }
 
 /* Tighter spacing in compact cards */
