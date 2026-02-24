@@ -2147,6 +2147,46 @@ document.getElementById('load-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'load-modal') e.target.classList.add('hidden');
 });
 
+function getFeatureFamily(key, featureLabel) {
+  const k = (key || '').toString();
+  if (/^favoredEnemy/.test(k)) return { familyKey: 'favoredEnemy', familyLabel: 'Favored Enemy' };
+  if (/^naturalExplorer/.test(k)) return { familyKey: 'naturalExplorer', familyLabel: 'Natural Explorer' };
+  if (/^asi\d+$/.test(k)) return { familyKey: 'asi', familyLabel: 'Ability Score Improvement' };
+  if (/^expertise/.test(k)) return { familyKey: 'expertise', familyLabel: 'Expertise' };
+  if (/^metamagic/.test(k)) return { familyKey: 'metamagic', familyLabel: 'Metamagic' };
+  if (/^invocation/.test(k)) return { familyKey: 'invocation', familyLabel: 'Eldritch Invocations' };
+  if (/^totemAnimal/.test(k)) return { familyKey: 'totemAnimal', familyLabel: 'Totem Spirit' };
+  return { familyKey: key, familyLabel: featureLabel || key };
+}
+
+function renderOneFeatureChoice(bodyEl, item) {
+  const { key, prompt, featureLabel, options } = item;
+  const block = document.createElement('div');
+  block.className = 'feature-choice-block';
+  const current = state.featureChoices[key];
+  const sel = document.createElement('select');
+  sel.dataset.choiceKey = key;
+  const opt0 = document.createElement('option');
+  opt0.value = '';
+  opt0.textContent = '— Choose —';
+  sel.appendChild(opt0);
+  (options || []).forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.damageType ? opt.name + ' (' + opt.damageType + ')' : (opt.name + (opt.desc ? ' — ' + opt.desc : ''));
+    if (opt.id === current) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => {
+    state.featureChoices[key] = sel.value || undefined;
+    if (!sel.value) delete state.featureChoices[key];
+    updateAutoFeatures();
+  });
+  block.innerHTML = '<label class="feature-choice-label">' + escapeHtml(featureLabel || prompt) + '</label>';
+  block.appendChild(sel);
+  bodyEl.appendChild(block);
+}
+
 document.getElementById('btn-feature-choices')?.addEventListener('click', () => {
   const pending = getPendingFeatureChoices();
   const listEl = document.getElementById('feature-choices-list');
@@ -2154,31 +2194,67 @@ document.getElementById('btn-feature-choices')?.addEventListener('click', () => 
   if (pending.length === 0) {
     listEl.innerHTML = '<p class="feature-choices-empty">No feature choices required for your current race, class, and level.</p>';
   } else {
-    pending.forEach(({ key, prompt, featureLabel, options }) => {
-      const block = document.createElement('div');
-      block.className = 'feature-choice-block';
-      const current = state.featureChoices[key];
-      const sel = document.createElement('select');
-      sel.dataset.choiceKey = key;
-      const opt0 = document.createElement('option');
-      opt0.value = '';
-      opt0.textContent = '— Choose —';
-      sel.appendChild(opt0);
-      (options || []).forEach(opt => {
-        const o = document.createElement('option');
-        o.value = opt.id;
-        o.textContent = opt.damageType ? opt.name + ' (' + opt.damageType + ')' : (opt.name + (opt.desc ? ' — ' + opt.desc : ''));
-        if (opt.id === current) o.selected = true;
-        sel.appendChild(o);
+    const bySource = { race: [], class: [], background: [] };
+    pending.forEach(p => {
+      const s = (p.source || 'class').toLowerCase();
+      if (bySource[s]) bySource[s].push(p);
+    });
+    const sectionOrder = ['race', 'class', 'background'];
+    const sectionTitles = { race: 'Race Features', class: 'Class Features', background: 'Background Features' };
+    let firstSection = true;
+    sectionOrder.forEach(source => {
+      const items = bySource[source] || [];
+      if (items.length === 0) return;
+      const section = document.createElement('div');
+      section.className = 'feature-choices-section';
+      section.dataset.section = source;
+      const header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'feature-choices-section-header';
+      header.setAttribute('aria-expanded', firstSection ? 'true' : 'false');
+      header.innerHTML = '<span class="feature-choices-section-title">' + escapeHtml(sectionTitles[source]) + '</span><span class="feature-choices-section-chevron" aria-hidden="true">' + (firstSection ? '▼' : '▶') + '</span>';
+      const body = document.createElement('div');
+      body.className = 'feature-choices-section-body' + (firstSection ? '' : ' collapsed');
+      firstSection = false;
+      header.addEventListener('click', () => {
+        const open = body.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', open ? 'false' : 'true');
+        header.querySelector('.feature-choices-section-chevron').textContent = open ? '▶' : '▼';
       });
-      sel.addEventListener('change', () => {
-        state.featureChoices[key] = sel.value || undefined;
-        if (!sel.value) delete state.featureChoices[key];
-        updateAutoFeatures();
+      const byFamily = {};
+      items.forEach(item => {
+        const { familyKey, familyLabel } = getFeatureFamily(item.key, item.featureLabel);
+        if (!byFamily[familyKey]) byFamily[familyKey] = { label: familyLabel, items: [] };
+        byFamily[familyKey].items.push(item);
       });
-      block.innerHTML = '<label class="feature-choice-label">' + escapeHtml(featureLabel || prompt) + '</label>';
-      block.appendChild(sel);
-      listEl.appendChild(block);
+      Object.keys(byFamily).forEach(familyKey => {
+        const { label: familyLabel, items: familyItems } = byFamily[familyKey];
+        if (familyItems.length === 1) {
+          renderOneFeatureChoice(body, familyItems[0]);
+        } else {
+          const sub = document.createElement('div');
+          sub.className = 'feature-choices-family';
+          const subHeader = document.createElement('button');
+          subHeader.type = 'button';
+          subHeader.className = 'feature-choices-family-header';
+          subHeader.setAttribute('aria-expanded', 'false');
+          subHeader.innerHTML = '<span class="feature-choices-family-title">' + escapeHtml(familyLabel) + '</span><span class="feature-choices-family-chevron" aria-hidden="true">▶</span>';
+          const subBody = document.createElement('div');
+          subBody.className = 'feature-choices-family-body collapsed';
+          subHeader.addEventListener('click', () => {
+            const open = subBody.classList.toggle('collapsed');
+            subHeader.setAttribute('aria-expanded', open ? 'false' : 'true');
+            subHeader.querySelector('.feature-choices-family-chevron').textContent = open ? '▶' : '▼';
+          });
+          familyItems.forEach(item => renderOneFeatureChoice(subBody, item));
+          sub.appendChild(subHeader);
+          sub.appendChild(subBody);
+          body.appendChild(sub);
+        }
+      });
+      section.appendChild(header);
+      section.appendChild(body);
+      listEl.appendChild(section);
     });
   }
   document.getElementById('feature-choices-modal').classList.remove('hidden');
