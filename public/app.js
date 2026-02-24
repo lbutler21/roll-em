@@ -749,10 +749,12 @@ const state = {
 };
 
 function getCharacterFromForm() {
+  const asiBonus = typeof getASIBonuses === 'function' ? getASIBonuses() : {};
   const abilities = {};
   ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => {
     const el = document.getElementById('ability-' + ab);
-    abilities[ab] = el ? parseInt(el.value, 10) || 10 : 10;
+    const effective = el ? parseInt(el.value, 10) || 10 : 10;
+    abilities[ab] = Math.max(1, Math.min(30, effective - (asiBonus[ab] || 0)));
   });
 
   const savingThrows = {};
@@ -851,6 +853,60 @@ function setValue(id, value) {
   else el.value = value == null ? '' : value;
 }
 
+var ASI_KEYS = ['asi4', 'asi6', 'asi8', 'asi10', 'asi12', 'asi14', 'asi16', 'asi19'];
+
+function parseASIOptionId(optionId) {
+  const out = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
+  if (!optionId || typeof optionId !== 'string') return out;
+  const ab = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+  const m2 = optionId.match(/^(str|dex|con|int|wis|cha)2$/);
+  if (m2) {
+    out[m2[1]] = 2;
+    return out;
+  }
+  const m1 = optionId.match(/^(str|dex|con|int|wis|cha)1(str|dex|con|int|wis|cha)1$/);
+  if (m1) {
+    out[m1[1]] = 1;
+    out[m1[2]] = 1;
+    return out;
+  }
+  return out;
+}
+
+function getASIBonuses() {
+  const out = { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 };
+  if (typeof FEATURE_CHOICES === 'undefined' || !FEATURE_CHOICES || !state.featureChoices) return out;
+  ASI_KEYS.forEach(key => {
+    const choice = state.featureChoices[key];
+    if (!choice) return;
+    const cfg = FEATURE_CHOICES[key];
+    if (!cfg || !cfg.options) return;
+    const opt = cfg.options.find(o => o.id === choice);
+    if (!opt) return;
+    const bonus = parseASIOptionId(opt.id);
+    ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => { out[ab] = (out[ab] || 0) + (bonus[ab] || 0); });
+  });
+  return out;
+}
+
+function applyASIToAbilityScores(asiKey, newChoiceValue) {
+  const abList = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+  const oldBonuses = getASIBonuses();
+  const base = {};
+  abList.forEach(ab => {
+    const current = parseInt(getValue('ability-' + ab), 10) || 10;
+    base[ab] = Math.max(1, Math.min(30, current - (oldBonuses[ab] || 0)));
+  });
+  state.featureChoices[asiKey] = newChoiceValue;
+  if (!newChoiceValue) delete state.featureChoices[asiKey];
+  const newBonuses = getASIBonuses();
+  abList.forEach(ab => {
+    setValue('ability-' + ab, base[ab] + (newBonuses[ab] || 0));
+  });
+  updateModifiers();
+  if (typeof renderSpellsTab === 'function') renderSpellsTab();
+}
+
 function findOptionIdByName(options, name) {
   if (!name) return '';
   const n = String(name).trim();
@@ -906,8 +962,10 @@ function loadCharacterIntoForm(data) {
   setScene(data.scene || 'default');
 
   const abilities = data.abilities || {};
+  const asiBonus = typeof getASIBonuses === 'function' ? getASIBonuses() : {};
   ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(ab => {
-    setValue('ability-' + ab, abilities[ab] ?? 10);
+    const base = abilities[ab] ?? 10;
+    setValue('ability-' + ab, base + (asiBonus[ab] || 0));
   });
 
   const savingThrows = data.savingThrows || {};
@@ -2159,6 +2217,19 @@ function getFeatureFamily(key, featureLabel) {
   return { familyKey: key, familyLabel: featureLabel || key };
 }
 
+var SUBCLASS_SELECTOR_DEPS = {
+  primalPath: ['totemAnimal3', 'totemAnimal6', 'totemAnimal14'],
+  druidCircle: ['landTerrain'],
+  rangerArchetype: ['huntersPrey', 'defensiveTactics', 'superiorHuntersDefense']
+};
+
+function getSubclassFeaturesLabel(selectorKey) {
+  const selectedId = state.featureChoices[selectorKey];
+  const cfg = typeof FEATURE_CHOICES !== 'undefined' && FEATURE_CHOICES && FEATURE_CHOICES[selectorKey];
+  const opt = cfg && (cfg.options || []).find(o => o.id === selectedId);
+  return opt ? (opt.name + ' features') : 'Subclass features';
+}
+
 function renderOneFeatureChoice(bodyEl, item) {
   const { key, prompt, featureLabel, options } = item;
   const block = document.createElement('div');
@@ -2178,9 +2249,22 @@ function renderOneFeatureChoice(bodyEl, item) {
     sel.appendChild(o);
   });
   sel.addEventListener('change', () => {
-    state.featureChoices[key] = sel.value || undefined;
-    if (!sel.value) delete state.featureChoices[key];
-    updateAutoFeatures();
+    if (/^asi\d+$/.test(key)) {
+      applyASIToAbilityScores(key, sel.value || undefined);
+      updateAutoFeatures();
+    } else {
+      state.featureChoices[key] = sel.value || undefined;
+      if (!sel.value) delete state.featureChoices[key];
+      updateAutoFeatures();
+      if (typeof SUBCLASS_SELECTOR_DEPS !== 'undefined' && SUBCLASS_SELECTOR_DEPS && Object.prototype.hasOwnProperty.call(SUBCLASS_SELECTOR_DEPS, key)) {
+        const wrap = sel.closest('.feature-choice-block');
+        const next = wrap && wrap.nextElementSibling;
+        if (next && next.classList.contains('feature-choices-subclass')) {
+          const titleEl = next.querySelector('.feature-choices-subclass-title');
+          if (titleEl) titleEl.textContent = getSubclassFeaturesLabel(key);
+        }
+      }
+    }
   });
   block.innerHTML = '<label class="feature-choice-label">' + escapeHtml(featureLabel || prompt) + '</label>';
   block.appendChild(sel);
@@ -2221,15 +2305,44 @@ document.getElementById('btn-feature-choices')?.addEventListener('click', () => 
         header.setAttribute('aria-expanded', open ? 'false' : 'true');
         header.querySelector('.feature-choices-section-chevron').textContent = open ? '▶' : '▼';
       });
+      var dependentKeysSet = new Set();
+      if (source === 'class' && SUBCLASS_SELECTOR_DEPS) {
+        Object.values(SUBCLASS_SELECTOR_DEPS).forEach(keys => keys.forEach(k => dependentKeysSet.add(k)));
+      }
+      var topLevelItems = source === 'class' ? items.filter(item => !dependentKeysSet.has(item.key)) : items;
       const byFamily = {};
-      items.forEach(item => {
+      topLevelItems.forEach(item => {
         const { familyKey, familyLabel } = getFeatureFamily(item.key, item.featureLabel);
         if (!byFamily[familyKey]) byFamily[familyKey] = { label: familyLabel, items: [] };
         byFamily[familyKey].items.push(item);
       });
       Object.keys(byFamily).forEach(familyKey => {
         const { label: familyLabel, items: familyItems } = byFamily[familyKey];
-        if (familyItems.length === 1) {
+        const isSubclassSelector = source === 'class' && SUBCLASS_SELECTOR_DEPS && Object.prototype.hasOwnProperty.call(SUBCLASS_SELECTOR_DEPS, familyItems[0].key);
+        const dependentKeys = isSubclassSelector ? (SUBCLASS_SELECTOR_DEPS[familyItems[0].key] || []) : [];
+        const dependentItems = dependentKeys.length ? dependentKeys.map(k => items.find(i => i.key === k)).filter(Boolean) : [];
+        if (familyItems.length === 1 && dependentItems.length > 0) {
+          renderOneFeatureChoice(body, familyItems[0]);
+          const sub = document.createElement('div');
+          sub.className = 'feature-choices-subclass';
+          const subLabel = getSubclassFeaturesLabel(familyItems[0].key);
+          const subHeader = document.createElement('button');
+          subHeader.type = 'button';
+          subHeader.className = 'feature-choices-subclass-header';
+          subHeader.setAttribute('aria-expanded', 'false');
+          subHeader.innerHTML = '<span class="feature-choices-subclass-title">' + escapeHtml(subLabel) + '</span><span class="feature-choices-subclass-chevron" aria-hidden="true">▶</span>';
+          const subBody = document.createElement('div');
+          subBody.className = 'feature-choices-subclass-body collapsed';
+          subHeader.addEventListener('click', () => {
+            const open = subBody.classList.toggle('collapsed');
+            subHeader.setAttribute('aria-expanded', open ? 'false' : 'true');
+            subHeader.querySelector('.feature-choices-subclass-chevron').textContent = open ? '▶' : '▼';
+          });
+          dependentItems.forEach(item => renderOneFeatureChoice(subBody, item));
+          sub.appendChild(subHeader);
+          sub.appendChild(subBody);
+          body.appendChild(sub);
+        } else if (familyItems.length === 1) {
           renderOneFeatureChoice(body, familyItems[0]);
         } else {
           const sub = document.createElement('div');
