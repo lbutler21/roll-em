@@ -340,7 +340,14 @@ function getPendingFeatureChoices() {
     if (cfg.source === 'race' && cfg.sourceId === raceId) pending.push({ key, ...cfg });
     if (cfg.source === 'class') {
       const ids = cfg.sourceIds || (cfg.sourceId ? [cfg.sourceId] : []);
-      if (ids.includes(classId)) pending.push({ key, ...cfg });
+      if (!ids.includes(classId)) return;
+      // Only show Totem Spirit choices when Primal Path is Totem Warrior
+      if (['totemAnimal3', 'totemAnimal6', 'totemAnimal14'].includes(key) && state.featureChoices.primalPath !== 'totem') return;
+      // Only show Land terrain when Druid Circle is Land
+      if (key === 'landTerrain' && state.featureChoices.druidCircle !== 'land') return;
+      // Only show Hunter choices when Ranger Archetype is Hunter
+      if (['huntersPrey', 'defensiveTactics', 'superiorHuntersDefense'].includes(key) && state.featureChoices.rangerArchetype !== 'hunter') return;
+      pending.push({ key, ...cfg });
     }
   });
   return pending;
@@ -364,6 +371,20 @@ function getResolvedFeatureText(featureName, choiceKey) {
       text = 'Damage Resistance (' + (opt.resistance || opt.damageType || '') + ')';
       desc = 'You have resistance to ' + (opt.resistance || opt.damageType || '').toLowerCase() + ' damage.';
     } else return { text: featureName, desc: null };
+  } else if (choiceKey === 'extraLanguage') {
+    text = 'Extra Language (' + opt.name + ')';
+    desc = opt.desc || desc;
+  } else if (choiceKey === 'bonusFeat') {
+    if (choice === 'none') {
+      text = 'Bonus Feat (optional rule)';
+      desc = null;
+    } else {
+      text = 'Bonus Feat (' + opt.name + ')';
+      desc = opt.desc || desc;
+    }
+  } else if (choiceKey === 'skillVersatility') {
+    text = 'Skill Versatility (' + opt.name + ')';
+    desc = opt.desc || desc;
   } else {
     text = featureName + ' (' + opt.name + ')';
     desc = opt.desc || desc;
@@ -381,7 +402,11 @@ function updateAutoFeatures() {
   if (raceData && raceData.features) {
     const feats = raceData.features.split(/\n/).filter(Boolean).map(f => {
       const name = f.trim();
-      const resolved = getResolvedFeatureText(name, 'draconicAncestry');
+      let choiceKey = 'draconicAncestry';
+      if (name.indexOf('Extra Language') >= 0) choiceKey = 'extraLanguage';
+      else if (name.indexOf('Bonus Feat') >= 0) choiceKey = 'bonusFeat';
+      else if (name.indexOf('Skill Versatility') >= 0) choiceKey = 'skillVersatility';
+      const resolved = getResolvedFeatureText(name, choiceKey);
       return wrapFeatureWithTooltip(resolved.text, resolved.desc);
     }).join(', ');
     parts.push('[Race: ' + raceData.name + ']\n' + feats);
@@ -403,6 +428,85 @@ function updateAutoFeatures() {
       if (txt && txt !== '—') {
         const featNames = txt.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
         const wrapped = featNames.map(name => {
+          // Ability Score Improvement: resolve by level (asi4, asi6, etc.)
+          if (name === 'Ability Score Improvement') {
+            const asiKey = 'asi' + lvl;
+            if (FEATURE_CHOICES && FEATURE_CHOICES[asiKey]) {
+              const resolved = getResolvedFeatureText(name, asiKey);
+              return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+            }
+          }
+          // Favored Enemy improvement: 2nd type at 6, 3rd at 14
+          if (name === 'Favored Enemy improvement') {
+            const key = lvl === 6 ? 'favoredEnemy6' : lvl === 14 ? 'favoredEnemy14' : null;
+            if (key && FEATURE_CHOICES && FEATURE_CHOICES[key]) {
+              const resolved = getResolvedFeatureText('Favored Enemy', key);
+              const ord = lvl === 6 ? '2nd' : '3rd';
+              const suffix = resolved.text.replace(/^Favored Enemy \(|\)$/g, '');
+              const text = suffix ? 'Favored Enemy (' + ord + ' type: ' + suffix + ')' : name;
+              return wrapFeatureWithTooltip(text, resolved.desc);
+            }
+          }
+          // Natural Explorer improvement: 2nd terrain at 6, 3rd at 10
+          if (name === 'Natural Explorer improvement') {
+            const key = lvl === 6 ? 'naturalExplorer6' : lvl === 10 ? 'naturalExplorer10' : null;
+            if (key && FEATURE_CHOICES && FEATURE_CHOICES[key]) {
+              const choice = state.featureChoices[key];
+              const cfg = FEATURE_CHOICES[key];
+              const opt = (cfg.options || []).find(o => o.id === choice);
+              const terrainName = opt ? opt.name : '';
+              const ord = lvl === 6 ? '2nd' : '3rd';
+              const text = terrainName ? 'Natural Explorer (' + ord + ' terrain: ' + terrainName + ')' : name;
+              return wrapFeatureWithTooltip(text, null);
+            }
+          }
+          // Totem Spirit / Aspect of the Beast / Totemic Attunement: show chosen animal
+          if (name === 'Totem Spirit' && state.featureChoices.totemAnimal3) {
+            const resolved = getResolvedFeatureText(name, 'totemAnimal3');
+            return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+          }
+          if (name === 'Aspect of the Beast' && state.featureChoices.totemAnimal6) {
+            const resolved = getResolvedFeatureText(name, 'totemAnimal6');
+            return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+          }
+          if (name === 'Totemic Attunement' && state.featureChoices.totemAnimal14) {
+            const resolved = getResolvedFeatureText(name, 'totemAnimal14');
+            return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+          }
+          // Expertise (Bard 3/10, Rogue 1/6)
+          if (name === 'Expertise') {
+            const expKey = classId === 'bard' && lvl === 3 ? 'expertiseBard3' : classId === 'bard' && lvl === 10 ? 'expertiseBard10' : classId === 'rogue' && lvl === 1 ? 'expertiseRogue1' : classId === 'rogue' && lvl === 6 ? 'expertiseRogue6' : null;
+            if (expKey && FEATURE_CHOICES && FEATURE_CHOICES[expKey]) {
+              const resolved = getResolvedFeatureText(name, expKey);
+              return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+            }
+          }
+          // Metamagic (Sorcerer: 2 at 3, +1 at 10, +1 at 17)
+          if (name === 'Metamagic' && classId === 'sorcerer') {
+            if (lvl === 3) {
+              const r1 = getResolvedFeatureText(name, 'metamagic3_1');
+              const r2 = getResolvedFeatureText(name, 'metamagic3_2');
+              return [r1, r2].map(r => wrapFeatureWithTooltip(r.text, r.desc)).join(', ');
+            }
+            const metaKey = lvl === 10 ? 'metamagic10' : lvl === 17 ? 'metamagic17' : null;
+            if (metaKey && FEATURE_CHOICES && FEATURE_CHOICES[metaKey]) {
+              const resolved = getResolvedFeatureText(name, metaKey);
+              return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+            }
+          }
+          // Eldritch Invocations (Warlock: 2 at 2, +1 at 5,7,9,12,15,18)
+          if (name === 'Eldritch Invocations' && classId === 'warlock') {
+            if (lvl === 2) {
+              const r1 = getResolvedFeatureText(name, 'invocation2_1');
+              const r2 = getResolvedFeatureText(name, 'invocation2_2');
+              return [r1, r2].map(r => wrapFeatureWithTooltip(r.text, r.desc)).join(', ');
+            }
+            const invKey = { 5: 'invocation5', 7: 'invocation7', 9: 'invocation9', 12: 'invocation12', 15: 'invocation15', 18: 'invocation18' }[lvl];
+            if (invKey && FEATURE_CHOICES && FEATURE_CHOICES[invKey]) {
+              const resolved = getResolvedFeatureText(name, invKey);
+              return wrapFeatureWithTooltip(resolved.text, resolved.desc);
+            }
+          }
           // Replace subclass placeholders with specific feature names
           const subclassChoiceKey = typeof getSubclassChoiceKey === 'function' ? getSubclassChoiceKey(name, classId) : null;
           if (subclassChoiceKey && typeof SUBCLASS_FEATURES !== 'undefined') {

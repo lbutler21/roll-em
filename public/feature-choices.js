@@ -1,6 +1,312 @@
 // Feature choices at certain levels (2014 5e D&D)
 
+// Ability Score Improvement: one +2 or two +1s (scores cannot exceed 20)
+const ASI_OPTIONS = [
+  { id: 'str2', name: 'Strength +2' },
+  { id: 'dex2', name: 'Dexterity +2' },
+  { id: 'con2', name: 'Constitution +2' },
+  { id: 'int2', name: 'Intelligence +2' },
+  { id: 'wis2', name: 'Wisdom +2' },
+  { id: 'cha2', name: 'Charisma +2' },
+  { id: 'str1dex1', name: 'Strength +1, Dexterity +1' },
+  { id: 'str1con1', name: 'Strength +1, Constitution +1' },
+  { id: 'str1int1', name: 'Strength +1, Intelligence +1' },
+  { id: 'str1wis1', name: 'Strength +1, Wisdom +1' },
+  { id: 'str1cha1', name: 'Strength +1, Charisma +1' },
+  { id: 'dex1con1', name: 'Dexterity +1, Constitution +1' },
+  { id: 'dex1int1', name: 'Dexterity +1, Intelligence +1' },
+  { id: 'dex1wis1', name: 'Dexterity +1, Wisdom +1' },
+  { id: 'dex1cha1', name: 'Dexterity +1, Charisma +1' },
+  { id: 'con1int1', name: 'Constitution +1, Intelligence +1' },
+  { id: 'con1wis1', name: 'Constitution +1, Wisdom +1' },
+  { id: 'con1cha1', name: 'Constitution +1, Charisma +1' },
+  { id: 'int1wis1', name: 'Intelligence +1, Wisdom +1' },
+  { id: 'int1cha1', name: 'Intelligence +1, Charisma +1' },
+  { id: 'wis1cha1', name: 'Wisdom +1, Charisma +1' }
+];
+
+// Skills for pair choices (Expertise, Skill Versatility)
+const SKILL_LIST = [
+  { id: 'acrobatics', name: 'Acrobatics' }, { id: 'animalHandling', name: 'Animal Handling' }, { id: 'arcana', name: 'Arcana' },
+  { id: 'athletics', name: 'Athletics' }, { id: 'deception', name: 'Deception' }, { id: 'history', name: 'History' },
+  { id: 'insight', name: 'Insight' }, { id: 'intimidation', name: 'Intimidation' }, { id: 'investigation', name: 'Investigation' },
+  { id: 'medicine', name: 'Medicine' }, { id: 'nature', name: 'Nature' }, { id: 'perception', name: 'Perception' },
+  { id: 'performance', name: 'Performance' }, { id: 'persuasion', name: 'Persuasion' }, { id: 'religion', name: 'Religion' },
+  { id: 'sleightOfHand', name: 'Sleight of Hand' }, { id: 'stealth', name: 'Stealth' }, { id: 'survival', name: 'Survival' }
+];
+const SKILL_PAIR_OPTIONS = (function () {
+  const o = [];
+  for (let i = 0; i < SKILL_LIST.length; i++) for (let j = i + 1; j < SKILL_LIST.length; j++) o.push({ id: SKILL_LIST[i].id + '_' + SKILL_LIST[j].id, name: SKILL_LIST[i].name + ' & ' + SKILL_LIST[j].name });
+  return o;
+})();
+
+// Languages (PHB/SRD)
+const LANGUAGE_OPTIONS = [
+  { id: 'common', name: 'Common' }, { id: 'dwarvish', name: 'Dwarvish' }, { id: 'elvish', name: 'Elvish' },
+  { id: 'giant', name: 'Giant' }, { id: 'gnomish', name: 'Gnomish' }, { id: 'goblin', name: 'Goblin' },
+  { id: 'halfling', name: 'Halfling' }, { id: 'orc', name: 'Orc' }, { id: 'abyssal', name: 'Abyssal' },
+  { id: 'celestial', name: 'Celestial' }, { id: 'draconic', name: 'Draconic' }, { id: 'deepSpeech', name: 'Deep Speech' },
+  { id: 'infernal', name: 'Infernal' }, { id: 'primordial', name: 'Primordial' }, { id: 'sylvan', name: 'Sylvan' },
+  { id: 'undercommon', name: 'Undercommon' }
+];
+
+// Feats (optional rule; SRD/PHB subset)
+const FEAT_OPTIONS = [
+  { id: 'none', name: 'None (not using optional rule)' },
+  { id: 'alert', name: 'Alert' }, { id: 'athlete', name: 'Athlete' }, { id: 'actor', name: 'Actor' },
+  { id: 'charger', name: 'Charger' }, { id: 'crossbowExpert', name: 'Crossbow Expert' }, { id: 'defensiveDuelist', name: 'Defensive Duelist' },
+  { id: 'dualWielder', name: 'Dual Wielder' }, { id: 'dungeonDelver', name: 'Dungeon Delver' }, { id: 'durable', name: 'Durable' },
+  { id: 'elementalAdept', name: 'Elemental Adept' }, { id: 'grappler', name: 'Grappler' }, { id: 'greatWeaponMaster', name: 'Great Weapon Master' },
+  { id: 'healer', name: 'Healer' }, { id: 'heavilyArmored', name: 'Heavily Armored' }, { id: 'heavyArmorMaster', name: 'Heavy Armor Master' },
+  { id: 'inspiringLeader', name: 'Inspiring Leader' }, { id: 'keenMind', name: 'Keen Mind' }, { id: 'lightlyArmored', name: 'Lightly Armored' },
+  { id: 'linguist', name: 'Linguist' }, { id: 'lucky', name: 'Lucky' }, { id: 'mageSlayer', name: 'Mage Slayer' },
+  { id: 'magicInitiate', name: 'Magic Initiate' }, { id: 'martialAdept', name: 'Martial Adept' }, { id: 'mobile', name: 'Mobile' },
+  { id: 'mountedCombatant', name: 'Mounted Combatant' }, { id: 'observant', name: 'Observant' }, { id: 'polearmMaster', name: 'Polearm Master' },
+  { id: 'resilient', name: 'Resilient' }, { id: 'ritualCaster', name: 'Ritual Caster' }, { id: 'savageAttacker', name: 'Savage Attacker' },
+  { id: 'sentinel', name: 'Sentinel' }, { id: 'sharpshooter', name: 'Sharpshooter' }, { id: 'shieldMaster', name: 'Shield Master' },
+  { id: 'skulker', name: 'Skulker' }, { id: 'spellSniper', name: 'Spell Sniper' }, { id: 'tavernBrawler', name: 'Tavern Brawler' },
+  { id: 'tough', name: 'Tough' }, { id: 'warCaster', name: 'War Caster' }, { id: 'weaponMaster', name: 'Weapon Master' }
+];
+
+// Metamagic (Sorcerer)
+const METAMAGIC_OPTIONS = [
+  { id: 'carefulSpell', name: 'Careful Spell' }, { id: 'distantSpell', name: 'Distant Spell' }, { id: 'empoweredSpell', name: 'Empowered Spell' },
+  { id: 'extendedSpell', name: 'Extended Spell' }, { id: 'heightenedSpell', name: 'Heightened Spell' }, { id: 'quickenedSpell', name: 'Quickened Spell' },
+  { id: 'subtleSpell', name: 'Subtle Spell' }, { id: 'twinnedSpell', name: 'Twinned Spell' }
+];
+
+// Eldritch Invocations (Warlock; same list for all levels – user picks valid per prereqs)
+const INVOCATION_OPTIONS = [
+  { id: 'agonizingBlast', name: 'Agonizing Blast' }, { id: 'armorOfShadows', name: 'Armor of Shadows' }, { id: 'beastSpeech', name: 'Beast Speech' },
+  { id: 'devilsSight', name: "Devil's Sight" }, { id: 'eldritchSight', name: 'Eldritch Sight' }, { id: 'eyesOfTheRuneKeeper', name: "Eyes of the Rune Keeper" },
+  { id: 'fiendishVigor', name: 'Fiendish Vigor' }, { id: 'maskOfManyFaces', name: 'Mask of Many Faces' }, { id: 'mistyVisions', name: 'Misty Visions' },
+  { id: 'thiefOfFiveFates', name: "Thief of Five Fates" }, { id: 'eldritchSpear', name: 'Eldritch Spear' }, { id: 'bookOfAncientSecrets', name: 'Book of Ancient Secrets' },
+  { id: 'voiceOfTheChainMaster', name: "Voice of the Chain Master" }, { id: 'thirstingBlade', name: 'Thirsting Blade' }, { id: 'mireTheMind', name: 'Mire the Mind' },
+  { id: 'oneWithShadows', name: 'One with Shadows' }, { id: 'signOfIllOmen', name: "Sign of Ill Omen" }, { id: 'bewitchingWhispers', name: 'Bewitching Whispers' },
+  { id: 'dreadfulWord', name: 'Dreadful Word' }, { id: 'ghostlyGaze', name: 'Ghostly Gaze' }, { id: 'trickstersEscape', name: "Trickster's Escape" },
+  { id: 'otherworldlyLeap', name: 'Otherworldly Leap' }, { id: 'minionsOfChaos', name: 'Minions of Chaos' }, { id: 'whispersOfTheGrave', name: "Whispers of the Grave" },
+  { id: 'ascendantStep', name: 'Ascendant Step' }, { id: 'visionsOfDistantRealms', name: 'Visions of Distant Realms' }, { id: 'witchSight', name: 'Witch Sight' },
+  { id: 'chainsOfCarceri', name: 'Chains of Carceri' }
+];
+
 const FEATURE_CHOICES = {
+  // Ranger – Favored Enemy (level 1)
+  favoredEnemy: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 1,
+    featureLabel: 'Favored Enemy',
+    prompt: 'Choose a type of enemy (or two humanoid races)',
+    options: [
+      { id: 'aberrations', name: 'Aberrations' },
+      { id: 'beasts', name: 'Beasts' },
+      { id: 'celestials', name: 'Celestials' },
+      { id: 'constructs', name: 'Constructs' },
+      { id: 'dragons', name: 'Dragons' },
+      { id: 'elementals', name: 'Elementals' },
+      { id: 'fey', name: 'Fey' },
+      { id: 'fiends', name: 'Fiends' },
+      { id: 'giants', name: 'Giants' },
+      { id: 'monstrosities', name: 'Monstrosities' },
+      { id: 'oozes', name: 'Oozes' },
+      { id: 'plants', name: 'Plants' },
+      { id: 'undead', name: 'Undead' },
+      { id: 'humanoids', name: 'Two humanoid races (note in sheet)' }
+    ]
+  },
+  favoredEnemy6: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 6,
+    featureLabel: 'Favored Enemy (2nd type)',
+    prompt: 'Choose an additional favored enemy type',
+    options: [
+      { id: 'aberrations', name: 'Aberrations' }, { id: 'beasts', name: 'Beasts' }, { id: 'celestials', name: 'Celestials' },
+      { id: 'constructs', name: 'Constructs' }, { id: 'dragons', name: 'Dragons' }, { id: 'elementals', name: 'Elementals' },
+      { id: 'fey', name: 'Fey' }, { id: 'fiends', name: 'Fiends' }, { id: 'giants', name: 'Giants' },
+      { id: 'monstrosities', name: 'Monstrosities' }, { id: 'oozes', name: 'Oozes' }, { id: 'plants', name: 'Plants' },
+      { id: 'undead', name: 'Undead' }, { id: 'humanoids', name: 'Two humanoid races (note in sheet)' }
+    ]
+  },
+  favoredEnemy14: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 14,
+    featureLabel: 'Favored Enemy (3rd type)',
+    prompt: 'Choose another favored enemy type',
+    options: [
+      { id: 'aberrations', name: 'Aberrations' }, { id: 'beasts', name: 'Beasts' }, { id: 'celestials', name: 'Celestials' },
+      { id: 'constructs', name: 'Constructs' }, { id: 'dragons', name: 'Dragons' }, { id: 'elementals', name: 'Elementals' },
+      { id: 'fey', name: 'Fey' }, { id: 'fiends', name: 'Fiends' }, { id: 'giants', name: 'Giants' },
+      { id: 'monstrosities', name: 'Monstrosities' }, { id: 'oozes', name: 'Oozes' }, { id: 'plants', name: 'Plants' },
+      { id: 'undead', name: 'Undead' }, { id: 'humanoids', name: 'Two humanoid races (note in sheet)' }
+    ]
+  },
+  // Ranger – Natural Explorer (level 1); additional terrains at 6 and 10
+  naturalExplorer: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 1,
+    featureLabel: 'Natural Explorer',
+    prompt: 'Choose a favored terrain',
+    options: [
+      { id: 'arctic', name: 'Arctic' },
+      { id: 'coast', name: 'Coast' },
+      { id: 'desert', name: 'Desert' },
+      { id: 'forest', name: 'Forest' },
+      { id: 'grassland', name: 'Grassland' },
+      { id: 'mountain', name: 'Mountain' },
+      { id: 'swamp', name: 'Swamp' },
+      { id: 'underdark', name: 'Underdark' }
+    ]
+  },
+  naturalExplorer6: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 6,
+    featureLabel: 'Natural Explorer (2nd terrain)',
+    prompt: 'Choose a second favored terrain',
+    options: [
+      { id: 'arctic', name: 'Arctic' }, { id: 'coast', name: 'Coast' }, { id: 'desert', name: 'Desert' },
+      { id: 'forest', name: 'Forest' }, { id: 'grassland', name: 'Grassland' }, { id: 'mountain', name: 'Mountain' },
+      { id: 'swamp', name: 'Swamp' }, { id: 'underdark', name: 'Underdark' }
+    ]
+  },
+  naturalExplorer10: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 10,
+    featureLabel: 'Natural Explorer (3rd terrain)',
+    prompt: 'Choose a third favored terrain',
+    options: [
+      { id: 'arctic', name: 'Arctic' }, { id: 'coast', name: 'Coast' }, { id: 'desert', name: 'Desert' },
+      { id: 'forest', name: 'Forest' }, { id: 'grassland', name: 'Grassland' }, { id: 'mountain', name: 'Mountain' },
+      { id: 'swamp', name: 'Swamp' }, { id: 'underdark', name: 'Underdark' }
+    ]
+  },
+  // Warlock – Pact Boon (level 3)
+  pactBoon: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 3,
+    featureLabel: 'Pact Boon',
+    prompt: 'Choose your Pact Boon',
+    options: [
+      { id: 'blade', name: 'Pact of the Blade', desc: 'Summon a pact weapon' },
+      { id: 'chain', name: 'Pact of the Chain', desc: 'Gain a familiar' },
+      { id: 'tome', name: 'Pact of the Tome', desc: 'Gain a book of cantrips' }
+    ]
+  },
+  // Barbarian Totem Warrior – animal at 3, 6, 14
+  totemAnimal3: {
+    source: 'class',
+    sourceId: 'barbarian',
+    level: 3,
+    featureLabel: 'Totem Spirit (3rd level)',
+    prompt: 'Choose your totem animal',
+    options: [
+      { id: 'bear', name: 'Bear', desc: 'Resistance to all damage except psychic while raging' },
+      { id: 'eagle', name: 'Eagle', desc: 'Others have disadvantage on opportunity attacks; dash as bonus action' },
+      { id: 'wolf', name: 'Wolf', desc: 'Allies have advantage on melee attacks against creatures within 5 ft. of you' }
+    ]
+  },
+  totemAnimal6: {
+    source: 'class',
+    sourceId: 'barbarian',
+    level: 6,
+    featureLabel: 'Aspect of the Beast (6th level)',
+    prompt: 'Choose totem benefit for 6th level',
+    options: [
+      { id: 'bear', name: 'Bear' }, { id: 'eagle', name: 'Eagle' }, { id: 'wolf', name: 'Wolf' }
+    ]
+  },
+  totemAnimal14: {
+    source: 'class',
+    sourceId: 'barbarian',
+    level: 14,
+    featureLabel: 'Totemic Attunement (14th level)',
+    prompt: 'Choose totem benefit for 14th level',
+    options: [
+      { id: 'bear', name: 'Bear' }, { id: 'eagle', name: 'Eagle' }, { id: 'wolf', name: 'Wolf' }
+    ]
+  },
+  // Druid Circle of the Land – terrain (level 2, Land only)
+  landTerrain: {
+    source: 'class',
+    sourceId: 'druid',
+    level: 2,
+    featureLabel: 'Circle of the Land – terrain',
+    prompt: 'Choose your land terrain (for circle spells)',
+    options: [
+      { id: 'arctic', name: 'Arctic' }, { id: 'coast', name: 'Coast' }, { id: 'desert', name: 'Desert' },
+      { id: 'forest', name: 'Forest' }, { id: 'grassland', name: 'Grassland' }, { id: 'mountain', name: 'Mountain' },
+      { id: 'swamp', name: 'Swamp' }, { id: 'underdark', name: 'Underdark' }
+    ]
+  },
+  // Ranger Hunter – choices at 3, 7, 15
+  huntersPrey: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 3,
+    featureLabel: "Hunter's Prey",
+    prompt: 'Choose one option',
+    options: [
+      { id: 'colossusSlayer', name: 'Colossus Slayer', desc: 'Extra 1d8 when target below max hp' },
+      { id: 'giantKiller', name: 'Giant Killer', desc: 'Reaction attack when Large+ creature hits you' },
+      { id: 'hordeBreaker', name: 'Horde Breaker', desc: 'Extra attack on different creature within 5 ft.' }
+    ]
+  },
+  defensiveTactics: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 7,
+    featureLabel: 'Defensive Tactics',
+    prompt: 'Choose one option',
+    options: [
+      { id: 'escapeHorde', name: 'Escape the Horde' },
+      { id: 'multiattackDefense', name: 'Multiattack Defense' },
+      { id: 'steelWill', name: 'Steel Will' }
+    ]
+  },
+  superiorHuntersDefense: {
+    source: 'class',
+    sourceId: 'ranger',
+    level: 15,
+    featureLabel: "Superior Hunter's Defense",
+    prompt: 'Choose one option',
+    options: [
+      { id: 'evasion', name: 'Evasion' },
+      { id: 'standAgainstTide', name: 'Stand Against the Tide' },
+      { id: 'uncannyDodge', name: 'Uncanny Dodge' }
+    ]
+  },
+  // Human – Extra Language (level 1)
+  extraLanguage: {
+    source: 'race',
+    sourceId: 'human',
+    level: 1,
+    featureLabel: 'Extra Language',
+    prompt: 'Choose one additional language',
+    options: LANGUAGE_OPTIONS
+  },
+  // Human – Bonus Feat (optional rule)
+  bonusFeat: {
+    source: 'race',
+    sourceId: 'human',
+    level: 1,
+    featureLabel: 'Bonus Feat',
+    prompt: 'Choose one feat (optional rule) or None',
+    options: FEAT_OPTIONS
+  },
+  // Half-Elf – Skill Versatility (two skills)
+  skillVersatility: {
+    source: 'race',
+    sourceId: 'halfElf',
+    level: 1,
+    featureLabel: 'Skill Versatility',
+    prompt: 'Choose two skills',
+    options: SKILL_PAIR_OPTIONS
+  },
   draconicAncestry: {
     source: 'race',
     sourceId: 'dragonborn',
@@ -33,6 +339,18 @@ const FEATURE_CHOICES = {
       { id: 'greatWeaponFighting', name: 'Great Weapon Fighting', desc: 'Reroll 1s and 2s on damage dice for two-handed or versatile melee weapons' },
       { id: 'protection', name: 'Protection', desc: 'Use reaction to impose disadvantage when a creature you can see attacks an ally within 5 ft.' },
       { id: 'twoWeaponFighting', name: 'Two-Weapon Fighting', desc: 'Add ability modifier to damage of the second attack when two-weapon fighting' }
+    ]
+  },
+  martialArchetype: {
+    source: 'class',
+    sourceId: 'fighter',
+    level: 3,
+    featureLabel: 'Martial Archetype',
+    prompt: 'Choose a Martial Archetype',
+    options: [
+      { id: 'champion', name: 'Champion', desc: 'Improved Critical, Remarkable Athlete, additional fighting style' },
+      { id: 'battleMaster', name: 'Battle Master', desc: 'Combat Superiority, maneuvers, Student of War' },
+      { id: 'eldritchKnight', name: 'Eldritch Knight', desc: 'Spellcasting, Weapon Bond, martial and arcane blend' }
     ]
   },
   primalPath: {
@@ -176,7 +494,148 @@ const FEATURE_CHOICES = {
       { id: 'divination', name: 'School of Divination', desc: 'Divination Savant, Portent' },
       { id: 'illusion', name: 'School of Illusion', desc: 'Illusion Savant, Improved Minor Illusion' }
     ]
-  }
+  },
+  // Bard – Expertise (choose two skills at 3 and 10)
+  expertiseBard3: {
+    source: 'class',
+    sourceId: 'bard',
+    level: 3,
+    featureLabel: 'Expertise (Level 3)',
+    prompt: 'Choose two skills for double proficiency',
+    options: SKILL_PAIR_OPTIONS
+  },
+  expertiseBard10: {
+    source: 'class',
+    sourceId: 'bard',
+    level: 10,
+    featureLabel: 'Expertise (Level 10)',
+    prompt: 'Choose two more skills for double proficiency',
+    options: SKILL_PAIR_OPTIONS
+  },
+  // Rogue – Expertise (choose two skills at 1 and 6)
+  expertiseRogue1: {
+    source: 'class',
+    sourceId: 'rogue',
+    level: 1,
+    featureLabel: 'Expertise (Level 1)',
+    prompt: 'Choose two skills for double proficiency',
+    options: SKILL_PAIR_OPTIONS
+  },
+  expertiseRogue6: {
+    source: 'class',
+    sourceId: 'rogue',
+    level: 6,
+    featureLabel: 'Expertise (Level 6)',
+    prompt: 'Choose two more skills for double proficiency',
+    options: SKILL_PAIR_OPTIONS
+  },
+  // Sorcerer – Metamagic (2 at 3, +1 at 10, +1 at 17)
+  metamagic3_1: {
+    source: 'class',
+    sourceId: 'sorcerer',
+    level: 3,
+    featureLabel: 'Metamagic (1st option)',
+    prompt: 'Choose first Metamagic option',
+    options: METAMAGIC_OPTIONS
+  },
+  metamagic3_2: {
+    source: 'class',
+    sourceId: 'sorcerer',
+    level: 3,
+    featureLabel: 'Metamagic (2nd option)',
+    prompt: 'Choose second Metamagic option',
+    options: METAMAGIC_OPTIONS
+  },
+  metamagic10: {
+    source: 'class',
+    sourceId: 'sorcerer',
+    level: 10,
+    featureLabel: 'Metamagic (3rd option)',
+    prompt: 'Choose another Metamagic option',
+    options: METAMAGIC_OPTIONS
+  },
+  metamagic17: {
+    source: 'class',
+    sourceId: 'sorcerer',
+    level: 17,
+    featureLabel: 'Metamagic (4th option)',
+    prompt: 'Choose another Metamagic option',
+    options: METAMAGIC_OPTIONS
+  },
+  // Warlock – Eldritch Invocations (2 at 2, +1 at 5, 7, 9, 12, 15, 18)
+  invocation2_1: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 2,
+    featureLabel: 'Eldritch Invocation (1st)',
+    prompt: 'Choose first invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation2_2: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 2,
+    featureLabel: 'Eldritch Invocation (2nd)',
+    prompt: 'Choose second invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation5: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 5,
+    featureLabel: 'Eldritch Invocation (5th level)',
+    prompt: 'Choose an invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation7: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 7,
+    featureLabel: 'Eldritch Invocation (7th level)',
+    prompt: 'Choose an invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation9: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 9,
+    featureLabel: 'Eldritch Invocation (9th level)',
+    prompt: 'Choose an invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation12: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 12,
+    featureLabel: 'Eldritch Invocation (12th level)',
+    prompt: 'Choose an invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation15: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 15,
+    featureLabel: 'Eldritch Invocation (15th level)',
+    prompt: 'Choose an invocation',
+    options: INVOCATION_OPTIONS
+  },
+  invocation18: {
+    source: 'class',
+    sourceId: 'warlock',
+    level: 18,
+    featureLabel: 'Eldritch Invocation (18th level)',
+    prompt: 'Choose an invocation',
+    options: INVOCATION_OPTIONS
+  },
+  // Ability Score Improvement (one +2 or two +1s; cannot exceed 20)
+  asi4: { source: 'class', sourceIds: ['artificer', 'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk', 'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard'], level: 4, featureLabel: 'Ability Score Improvement (Level 4)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi6: { source: 'class', sourceId: 'fighter', level: 6, featureLabel: 'Ability Score Improvement (Level 6)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi8: { source: 'class', sourceIds: ['artificer', 'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk', 'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard'], level: 8, featureLabel: 'Ability Score Improvement (Level 8)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi10: { source: 'class', sourceIds: ['fighter', 'rogue'], level: 10, featureLabel: 'Ability Score Improvement (Level 10)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi12: { source: 'class', sourceIds: ['artificer', 'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk', 'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard'], level: 12, featureLabel: 'Ability Score Improvement (Level 12)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi14: { source: 'class', sourceId: 'fighter', level: 14, featureLabel: 'Ability Score Improvement (Level 14)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi16: { source: 'class', sourceIds: ['artificer', 'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk', 'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard'], level: 16, featureLabel: 'Ability Score Improvement (Level 16)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS },
+  asi19: { source: 'class', sourceIds: ['artificer', 'barbarian', 'bard', 'cleric', 'druid', 'fighter', 'monk', 'paladin', 'ranger', 'rogue', 'sorcerer', 'warlock', 'wizard'], level: 19, featureLabel: 'Ability Score Improvement (Level 19)', prompt: 'Increase one ability by 2, or two abilities by 1', options: ASI_OPTIONS }
 };
 
 // Maps placeholder feature strings to choice keys (for class-specific: pass classId to getSubclassChoiceKey)
@@ -185,6 +644,7 @@ const PLACEHOLDER_TO_CHOICE = {
   'College feature': 'bardCollege',
   'Divine Domain feature': 'divineDomain',
   'Druid Circle feature': 'druidCircle',
+  'Martial Archetype': 'martialArchetype',
   'Oath feature': 'sacredOath',
   'Origin feature': 'sorcerousOrigin',
   'Patron feature': 'otherworldlyPatron',
@@ -192,7 +652,7 @@ const PLACEHOLDER_TO_CHOICE = {
   'Artificer Specialist': 'artificerSpecialist'
 };
 const PLACEHOLDER_BY_CLASS = {
-  'Archetype feature': { ranger: 'rangerArchetype', rogue: 'roguishArchetype' },
+  'Archetype feature': { fighter: 'martialArchetype', ranger: 'rangerArchetype', rogue: 'roguishArchetype' },
   'Tradition feature': { monk: 'monasticTradition', wizard: 'arcaneTradition' }
 };
 function getSubclassChoiceKey(placeholder, classId) {
@@ -204,6 +664,29 @@ function getSubclassChoiceKey(placeholder, classId) {
 // Specific features per subclass per level (replaces generic placeholders)
 // Format: choiceKey -> optionId -> level -> "Feature1\nFeature2"
 const SUBCLASS_FEATURES = {
+  martialArchetype: {
+    champion: {
+      3: 'Improved Critical',
+      7: 'Remarkable Athlete',
+      10: 'Additional Fighting Style',
+      15: 'Superior Critical',
+      18: 'Survivor'
+    },
+    battleMaster: {
+      3: 'Combat Superiority\nStudent of War',
+      7: 'Know Your Enemy',
+      10: 'Improved Combat Superiority',
+      15: 'Relentless',
+      18: '—'
+    },
+    eldritchKnight: {
+      3: 'Spellcasting\nWeapon Bond',
+      7: 'War Magic',
+      10: 'Eldritch Strike',
+      15: 'Arcane Charge',
+      18: 'Improved War Magic'
+    }
+  },
   primalPath: {
     berserker: {
       3: 'Frenzy',
