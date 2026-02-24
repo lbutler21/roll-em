@@ -4,15 +4,28 @@ const RACE_OPTIONS = {
   '': { name: '—', features: '' },
   elf: {
     name: 'Elf',
-    features: 'Darkvision\nFey Ancestry\nTrance'
+    features: 'Darkvision\nFey Ancestry\nTrance',
+    subraces: {
+      high: { name: 'High Elf', features: 'Elf Weapon Training\nCantrip\nExtra Language' },
+      wood: { name: 'Wood Elf', features: 'Elf Weapon Training\nFleet of Foot\nMask of the Wild' },
+      drow: { name: 'Dark Elf (Drow)', features: 'Superior Darkvision\nDrow Magic\nSunlight Sensitivity' }
+    }
   },
   dwarf: {
     name: 'Dwarf',
-    features: 'Darkvision\nDwarven Resilience\nDwarven Combat Training\nStonecunning'
+    features: 'Darkvision\nDwarven Resilience\nDwarven Combat Training\nStonecunning',
+    subraces: {
+      hill: { name: 'Hill Dwarf', features: 'Dwarven Toughness' },
+      mountain: { name: 'Mountain Dwarf', features: 'Dwarven Armor Training' }
+    }
   },
   halfling: {
     name: 'Halfling',
-    features: 'Lucky\nBrave\nHalfling Nimbleness'
+    features: 'Lucky\nBrave\nHalfling Nimbleness',
+    subraces: {
+      lightfoot: { name: 'Lightfoot Halfling', features: 'Naturally Stealthy' },
+      stout: { name: 'Stout Halfling', features: 'Stout Resilience' }
+    }
   },
   human: {
     name: 'Human',
@@ -24,7 +37,11 @@ const RACE_OPTIONS = {
   },
   gnome: {
     name: 'Gnome',
-    features: 'Darkvision\nGnome Cunning'
+    features: 'Darkvision\nGnome Cunning',
+    subraces: {
+      forest: { name: 'Forest Gnome', features: 'Natural Illusionist\nSpeak with Small Beasts' },
+      rock: { name: 'Rock Gnome', features: 'Artisan\'s Tools\nTinker' }
+    }
   },
   halfElf: {
     name: 'Half-Elf',

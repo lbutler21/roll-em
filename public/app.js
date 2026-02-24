@@ -304,7 +304,14 @@ function getDisplayName(selectId, customId) {
   const custom = document.getElementById(customId);
   const id = sel && sel.value ? sel.value.trim() : '';
   if (id === 'other' && custom) return (custom.value || '').trim();
-  const data = selectId === 'race' ? RACE_OPTIONS[id] : selectId === 'class' ? CLASS_OPTIONS[id] : BACKGROUND_OPTIONS[id];
+  if (selectId === 'race' && id && RACE_OPTIONS[id]) {
+    const subSel = document.getElementById('subrace');
+    const subId = subSel && subSel.value ? subSel.value.trim() : '';
+    const subraces = RACE_OPTIONS[id].subraces;
+    if (subraces && subId && subraces[subId]) return subraces[subId].name;
+    return RACE_OPTIONS[id].name;
+  }
+  const data = selectId === 'class' ? CLASS_OPTIONS[id] : selectId === 'background' ? BACKGROUND_OPTIONS[id] : null;
   return data ? data.name : '';
 }
 
@@ -399,8 +406,11 @@ function updateAutoFeatures() {
   const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
   const parts = [];
   const raceData = RACE_OPTIONS[raceId];
+  const subraceId = getValue('subrace') || '';
+  const subraceData = raceData && raceData.subraces && subraceId ? raceData.subraces[subraceId] : null;
+  const raceDisplayName = subraceData ? subraceData.name : (raceData ? raceData.name : '');
   if (raceData && raceData.features) {
-    const feats = raceData.features.split(/\n/).filter(Boolean).map(f => {
+    let featLines = raceData.features.split(/\n/).filter(Boolean).map(f => {
       const name = f.trim();
       let choiceKey = 'draconicAncestry';
       if (name.indexOf('Extra Language') >= 0) choiceKey = 'extraLanguage';
@@ -408,8 +418,12 @@ function updateAutoFeatures() {
       else if (name.indexOf('Skill Versatility') >= 0) choiceKey = 'skillVersatility';
       const resolved = getResolvedFeatureText(name, choiceKey);
       return wrapFeatureWithTooltip(resolved.text, resolved.desc);
-    }).join(', ');
-    parts.push('[Race: ' + raceData.name + ']\n' + feats);
+    });
+    if (subraceData && subraceData.features) {
+      const subFeats = subraceData.features.split(/\n/).filter(Boolean).map(f => wrapFeatureWithTooltip(f.trim()));
+      featLines = featLines.concat(subFeats);
+    }
+    parts.push('[Race: ' + raceDisplayName + ']\n' + featLines.join(', '));
   }
   const classData = CLASS_OPTIONS[classId];
   const choiceKeyByFeature = {};
@@ -626,6 +640,29 @@ function toggleCustomInputs() {
   });
 }
 
+function updateSubraceVisibility() {
+  const raceId = getValue('race') || '';
+  const raceData = RACE_OPTIONS[raceId];
+  const subraceLabel = document.getElementById('subrace-label');
+  const subraceSel = document.getElementById('subrace');
+  if (!subraceLabel || !subraceSel) return;
+  const hasSubraces = raceData && raceData.subraces && Object.keys(raceData.subraces).length > 0;
+  if (hasSubraces) {
+    subraceLabel.classList.remove('hidden');
+    subraceSel.innerHTML = '<option value="">—</option>';
+    Object.keys(raceData.subraces).forEach(subId => {
+      const opt = document.createElement('option');
+      opt.value = subId;
+      opt.textContent = raceData.subraces[subId].name;
+      subraceSel.appendChild(opt);
+    });
+  } else {
+    subraceLabel.classList.add('hidden');
+    subraceSel.innerHTML = '<option value="">—</option>';
+    setValue('subrace', '');
+  }
+}
+
 function abilityModifier(score) {
   const n = parseInt(score, 10);
   if (isNaN(n)) return 0;
@@ -781,6 +818,7 @@ function getCharacterFromForm() {
     level: parseInt(getValue('level'), 10) || 1,
     race: getDisplayName('race', 'raceCustom') || (RACE_OPTIONS[raceId] && RACE_OPTIONS[raceId].name),
     raceId: raceId || undefined,
+    subraceId: getValue('subrace') || undefined,
     background: getDisplayName('background', 'backgroundCustom') || (BACKGROUND_OPTIONS[backgroundId] && BACKGROUND_OPTIONS[backgroundId].name),
     backgroundId: backgroundId || undefined,
     raceCustom: getValue('raceCustom'),
@@ -960,6 +998,9 @@ function loadCharacterIntoForm(data) {
     localStorage.setItem(SCENE_BG_IMAGE_KEY, data.sceneBgImage || '');
   } catch (e) {}
   setScene(data.scene || 'default');
+
+  updateSubraceVisibility();
+  setValue('subrace', data.subraceId || '');
 
   const abilities = data.abilities || {};
   const asiBonus = typeof getASIBonuses === 'function' ? getASIBonuses() : {};
@@ -1242,6 +1283,36 @@ function renderRollHistory() {
     : rollHistory.map((e) => `<li><span class="roll-history-label">${e.label}</span> <span class="roll-history-detail">${parts(e)}</span></li>`).join('');
 }
 
+var rollToastTimeout = null;
+
+function showRollToast(label, total) {
+  let container = document.getElementById('roll-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'roll-toast-container';
+    container.setAttribute('aria-live', 'polite');
+    document.body.appendChild(container);
+  }
+  if (rollToastTimeout) {
+    clearTimeout(rollToastTimeout);
+    rollToastTimeout = null;
+  }
+  const toast = document.createElement('div');
+  toast.className = 'roll-toast';
+  toast.innerHTML = '<span class="roll-toast-label">' + escapeHtml(label || 'Roll') + '</span><span class="roll-toast-total">' + escapeHtml(String(total)) + '</span>';
+  container.innerHTML = '';
+  container.appendChild(toast);
+  container.classList.remove('roll-toast-hidden');
+  rollToastTimeout = setTimeout(() => {
+    container.classList.add('roll-toast-hidden');
+    rollToastTimeout = setTimeout(() => {
+      container.innerHTML = '';
+      container.classList.remove('roll-toast-hidden');
+      rollToastTimeout = null;
+    }, 400);
+  }, 5000);
+}
+
 function showDiceResult(result, label) {
   const el = document.getElementById('dice-result');
   if (!el) return;
@@ -1258,6 +1329,7 @@ function showDiceResult(result, label) {
     <strong>${label || 'Roll'}: ${result.total}</strong>
     <div class="roll-detail">${result.notation} → [${parts}]${modStr} = ${result.total}</div>
   `;
+  showRollToast(label || 'Roll', result.total);
 }
 
 function rollAbility(ability) {
@@ -1791,12 +1863,13 @@ document.getElementById('btn-new')?.addEventListener('click', () => {
 });
 
 /* ========== Character Builder (D&D Beyond style) ========== */
-const builderState = { step: 1, classId: '', raceId: '', backgroundId: '', skillChoices: [] };
+const builderState = { step: 1, classId: '', raceId: '', subraceId: '', backgroundId: '', skillChoices: [] };
 
 function openBuilder() {
   builderState.step = 1;
   builderState.classId = '';
   builderState.raceId = '';
+  builderState.subraceId = '';
   builderState.backgroundId = '';
   builderState.skillChoices = [];
   document.getElementById('builder-name').value = '';
@@ -1834,6 +1907,7 @@ function buildBuilderOptionGrids() {
     opt.addEventListener('click', () => selectBuilderOption('race', id));
     raceGrid.appendChild(opt);
   });
+  updateBuilderSubraceGrid();
   const bgGrid = document.getElementById('builder-background-grid');
   bgGrid.innerHTML = '';
   Object.keys(BACKGROUND_OPTIONS).forEach(id => {
@@ -1848,9 +1922,43 @@ function buildBuilderOptionGrids() {
   });
 }
 
+function updateBuilderSubraceGrid() {
+  const wrap = document.getElementById('builder-subrace-wrap');
+  const grid = document.getElementById('builder-subrace-grid');
+  if (!wrap || !grid) return;
+  const raceData = RACE_OPTIONS[builderState.raceId];
+  const hasSubraces = raceData && raceData.subraces && Object.keys(raceData.subraces).length > 0;
+  if (hasSubraces) {
+    wrap.classList.remove('hidden');
+    grid.innerHTML = '';
+    Object.keys(raceData.subraces).forEach(subId => {
+      const opt = document.createElement('div');
+      opt.className = 'builder-option' + (builderState.subraceId === subId ? ' selected' : '');
+      opt.textContent = raceData.subraces[subId].name;
+      opt.dataset.id = subId;
+      opt.dataset.type = 'subrace';
+      opt.addEventListener('click', () => {
+        builderState.subraceId = subId;
+        document.querySelectorAll('.builder-option[data-type="subrace"]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.id === subId);
+        });
+      });
+      grid.appendChild(opt);
+    });
+  } else {
+    wrap.classList.add('hidden');
+    grid.innerHTML = '';
+    builderState.subraceId = '';
+  }
+}
+
 function selectBuilderOption(type, id) {
   if (type === 'class') builderState.classId = id;
-  else if (type === 'race') builderState.raceId = id;
+  else if (type === 'race') {
+    builderState.raceId = id;
+    builderState.subraceId = '';
+    updateBuilderSubraceGrid();
+  }
   else if (type === 'background') builderState.backgroundId = id;
   document.querySelectorAll('.builder-option[data-type="' + type + '"]').forEach(el => {
     el.classList.toggle('selected', el.dataset.id === id);
@@ -1930,6 +2038,8 @@ function completeBuilder() {
   setValue('name', name);
   setValue('level', level);
   setValue('race', raceId);
+  updateSubraceVisibility();
+  setValue('subrace', builderState.subraceId || '');
   setValue('class', classId);
   setValue('background', bgId);
   setValue('raceCustom', '');
@@ -1998,7 +2108,10 @@ function renderBuilderSummary() {
   const level = document.getElementById('builder-level').value || 1;
   let html = '<p><strong>' + name + '</strong> — Level ' + level + '</p>';
   html += '<p><strong>Class:</strong> ' + (classData?.name || '—') + '</p>';
-  html += '<p><strong>Race:</strong> ' + (raceData?.name || '—') + '</p>';
+  const raceDisplay = raceData && raceData.subraces && builderState.subraceId && raceData.subraces[builderState.subraceId]
+    ? raceData.subraces[builderState.subraceId].name
+    : (raceData?.name || '—');
+  html += '<p><strong>Race:</strong> ' + raceDisplay + '</p>';
   html += '<p><strong>Background:</strong> ' + (bgData?.name || '—') + '</p>';
   const scores = ['str','dex','con','int','wis','cha'].map(ab => {
     const v = parseInt(document.getElementById('builder-' + ab).value, 10) || 10;
@@ -2856,6 +2969,7 @@ function populateSelects() {
   fill('race', RACE_OPTIONS);
   fill('class', CLASS_OPTIONS);
   fill('background', BACKGROUND_OPTIONS);
+  updateSubraceVisibility();
 }
 
 populateSelects();
@@ -2867,6 +2981,7 @@ updateBanner();
   if (!sel) return;
   sel.addEventListener('change', () => {
     toggleCustomInputs();
+    if (field === 'race') updateSubraceVisibility();
     updateAutoFeatures();
     updateBanner();
     if (field === 'background') updateBackgroundDisplay();
@@ -2876,6 +2991,11 @@ updateBanner();
       if (data && data.hitDice) setValue('hitDice', data.hitDice);
     }
   });
+});
+
+document.getElementById('subrace')?.addEventListener('change', () => {
+  updateAutoFeatures();
+  updateBanner();
 });
 
 updateModifiers();
