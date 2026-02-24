@@ -1225,6 +1225,15 @@ body {
   margin-left: auto;
 }
 
+.spell-add-btn--at-limit {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.spell-add-btn--at-limit:hover {
+  opacity: 0.5;
+}
+
 .spells-known-list .spells-list-row {
   justify-content: space-between;
 }

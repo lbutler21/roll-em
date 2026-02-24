@@ -2630,8 +2630,9 @@ function renderSpellsTab() {
       row.className = 'spells-list-row';
       const nameEsc = escapeHtml(spell.name || '');
       const addDisabled = atOrOverLimit ? ' disabled' : '';
+      const addDimmed = atOrOverLimit ? ' spell-add-btn--at-limit' : '';
       const addTitle = atOrOverLimit ? ' title="At maximum ' + limitInfo.label.toLowerCase() + '"' : '';
-      row.innerHTML = '<span class="spell-level-tag">[' + levelStr + ']</span> <span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <button type="button" class="btn btn-ghost btn-sm spell-add-btn" data-name="' + nameEsc + '"' + addDisabled + addTitle + '>Add</button>';
+      row.innerHTML = '<span class="spell-level-tag">[' + levelStr + ']</span> <span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <button type="button" class="btn btn-ghost btn-sm spell-add-btn' + addDimmed + '" data-name="' + nameEsc + '"' + addDisabled + addTitle + '>Add</button>';
       const addBtn = row.querySelector('.spell-add-btn');
       if (addBtn && !atOrOverLimit) {
         addBtn.addEventListener('click', () => {
