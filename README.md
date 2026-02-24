@@ -9,7 +9,7 @@ A web app for creating and managing **Fifth Edition Dungeons & Dragons** charact
 ### Character sheet
 - **Manual input**: All standard 2014 5e fields — abilities, skills, saving throws, combat stats (AC, initiative, HP, death saves), equipment, features & traits, and notes
 - **Auto-calculated modifiers**: Ability modifiers and skill/save modifiers (including proficiency) update as you type
-- **Layout**: Compact layout with Combat, Saving Throws, and Dice Roller in one row; PB/Speed/Inspiration below the Dice Roller; tabbed sections for Actions, Inventory, Spells, Features & Traits, Background, and Notes
+- **Layout**: Compact layout with Combat, Saving Throws, and Dice Roller in one row; PB/Speed/Inspiration below the Dice Roller; tabbed sections for Actions, Inventory, Spells, Features & Traits, Background, and Notes; a standalone **Notepad** card (like Saving Throws) with keyword search (Find / Find next), saved with the character
 
 ### Dice rolling
 - **Ability checks**: Roll d20 for any ability (STR, DEX, CON, INT, WIS, CHA) with the correct modifier
@@ -24,7 +24,10 @@ A web app for creating and managing **Fifth Edition Dungeons & Dragons** charact
 
 ### Theming
 - **Dark / light mode**: Toggle in the top-right (sun/moon icon). Preference is saved in `localStorage`.
-- **Change Scene**: Pick a color scheme for the sheet — **Default** (red), **Forest** (green), **Ocean** (blue), **Royal** (purple), **Ember** (orange). Background and accent colors change to match; choice is saved in `localStorage`.
+- **Change Scene**: Pick a color scheme for the sheet — **Default** (red), **Forest** (green), **Ocean** (blue), **Royal** (purple), **Ember** (orange), or **Custom image** (upload a file or paste an image URL). Background and accent colors change to match. Scene choice is saved in `localStorage` and **per character** (saved with the character and restored when you switch characters).
+
+### Responsive design
+- **Phone, tablet, and laptop**: Layout adapts to screen size — single column on smaller viewports, scrollable tab bar on mobile, touch-friendly tap targets, stacked Combat/Saves/Dice on narrow screens, and modals that fit the viewport. Inputs use a minimum font size on mobile to avoid unwanted zoom on focus.
 
 ### Storage & reference
 - **Backend storage**: Save and load character sheets on the server (create, update, list, load, delete). Requires an account (Register / Log in).
@@ -49,6 +52,13 @@ A web app for creating and managing **Fifth Edition Dungeons & Dragons** charact
    [http://localhost:3000](http://localhost:3000)
 
 The app is served from the same origin, so **Save to Server** and **Load** work without extra configuration. Create an account from the landing page or after clicking **Log in** to save and load characters.
+
+### Keeping data across deploys
+
+By default, character and user data is stored in `./data` (created at runtime). On many hosts this directory is **ephemeral** — it is wiped on each deploy, so all user data is lost after an update.
+
+- **Persistent server storage**: Set the `DATA_DIR` environment variable to a path that survives redeploys (e.g. a mounted volume). The server will write `characters.json` and `users.json` there. Example: `DATA_DIR=/app/data` (Linux) or your host’s persistent storage path.
+- **Restore from this device**: The app keeps a **local backup** of characters in your browser (when you save or load). If the server list is empty (e.g. after a deploy), open **Load** and use **Restore X character(s) from this device** to re-upload your saved characters to the server.
 
 ---
 
@@ -93,14 +103,14 @@ dice_proj/
 - `GET /api/magicitems` — List magic items
 - `GET /api/rules` — List SRD rules sections
 
-Data is stored in `data/characters.json` and `data/users.json` (created automatically). Spells, equipment, magic items, and rules are fetched from the Open5e API and cached by the server.
+Character and user data is stored in `data/characters.json` and `data/users.json` (created automatically under the **data directory**). Spells, equipment, magic items, and rules are fetched from the Open5e API and cached by the server.
 
 ---
 
 ## Tech
 
 - **Backend**: Node.js 18+, Express, express-session, bcryptjs, JSON file storage, Open5e API integration
-- **Frontend**: Vanilla HTML, CSS, and JavaScript (no build step). Uses `localStorage` for theme and scene preferences.
+- **Frontend**: Vanilla HTML, CSS, and JavaScript (no build step). Uses `localStorage` for theme and scene preferences. Responsive CSS (media queries and touch-friendly targets) for mobile and tablet.
 
 ---
 
@@ -126,13 +136,16 @@ The app is a **Node.js + Express** backend with a **vanilla HTML/CSS/JS** fronte
 1. Sign in at [railway.app](https://railway.app) (e.g. “Login with GitHub”).
 2. **New Project** → **Deploy from GitHub repo** → select your repo.
 3. After deploy, open the service → **Variables** → add **`SESSION_SECRET`** (long random string) for secure sessions.
-4. **Settings** → **Networking** → **Generate Domain**. Your app is live at the generated URL.
+4. **Persistent data (required so updates don't clear users/characters):** Add a **Volume** to the service (Settings → Volumes → Add Volume, e.g. mount path `/data`). Then in **Variables** add **`DATA_DIR=/data`**. The app will store `characters.json` and `users.json` on the volume so they survive redeploys.
+5. **Settings** → **Networking** → **Generate Domain**. Your app is live at the generated URL.
 
 ### 3. Or deploy on Render
 
 1. Sign in at [render.com](https://render.com) with GitHub.
 2. **New** → **Web Service** → connect your repo.
 3. **Environment**: Node. **Build**: `npm install`. **Start**: `npm start`.
-4. Add **`SESSION_SECRET`** under Environment. Create the service and use the URL Render provides.
+4. Add **`SESSION_SECRET`** under Environment.
+5. **Persistent data (required so updates don't clear users/characters):** Add a **Disk** (Settings → Disks → Add Disk, e.g. mount path `/data`, size 1 GB). Add **`DATA_DIR=/data`** to Environment. The app will store character and user files on the disk so they survive redeploys.
+6. Create the service and use the URL Render provides.
 
-**Summary:** Push the repo to GitHub, then deploy with Railway or Render. Set **`SESSION_SECRET`** in the host’s environment. You can attach a custom domain later from the host’s dashboard.
+**Summary:** Push the repo to GitHub, then deploy with Railway or Render. Set **`SESSION_SECRET`** and **`DATA_DIR`** (to a persistent volume/disk path) so sessions and user data are not lost when you update the site. You can attach a custom domain later from the host dashboard.

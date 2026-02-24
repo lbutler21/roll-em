@@ -1,23 +1,35 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
+// Use DATA_DIR env for persistent storage on deploy (e.g. mounted volume). Default: ./data (ephemeral on many hosts).
+const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'characters.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+
+const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Persist sessions on disk so logins survive server restarts/deploys (e.g. Railway).
+const sessionStore = new FileStore({
+  path: path.join(DATA_DIR, 'sessions'),
+  ttl: Math.floor(SESSION_MAX_AGE_MS / 1000),
+  retries: 2
+});
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'dice-proj-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { httpOnly: true, sameSite: 'lax', maxAge: SESSION_MAX_AGE_MS }
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -462,4 +474,8 @@ app.get('/api/rules', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+ensureDataDir();
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Data directory: ${DATA_DIR}`);
+});

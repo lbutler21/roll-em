@@ -2649,6 +2649,14 @@ textarea {
   cursor: default;
 }
 
+#character-list .char-list-restore {
+  cursor: default;
+  border-bottom: none;
+}
+#character-list .char-list-restore:hover {
+  background: transparent;
+}
+
 #character-list .char-list-name {
   flex: 1;
   min-width: 0;

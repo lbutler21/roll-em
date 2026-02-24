@@ -5,6 +5,7 @@ const THEME_KEY = 'dice-proj-theme';
 const SCENE_KEY = 'dice-proj-scene';
 const SCENE_BG_IMAGE_KEY = 'dice-proj-scene-bg-image';
 const CHARACTER_SCENES_CACHE_KEY = 'dice-proj-character-scenes';
+const CHARACTER_BACKUPS_KEY = 'dice-proj-character-backups';
 
 const SCENES = [
   { id: 'default', name: 'Default' },
@@ -64,6 +65,28 @@ function saveCurrentCharacterSceneToCache() {
   cache[state.characterId] = { scene: getScene(), sceneBgImage: getSceneBgImage() };
   try {
     localStorage.setItem(CHARACTER_SCENES_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {}
+}
+
+function getCharacterBackups() {
+  try {
+    const raw = localStorage.getItem(CHARACTER_BACKUPS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {}
+  return [];
+}
+
+function addCharacterToBackup(char) {
+  if (!char || typeof char !== 'object') return;
+  const list = getCharacterBackups();
+  const id = char.id;
+  const idx = id ? list.findIndex(c => c.id === id) : -1;
+  const copy = { ...char };
+  if (idx >= 0) list[idx] = copy;
+  else list.push(copy);
+  try {
+    localStorage.setItem(CHARACTER_BACKUPS_KEY, JSON.stringify(list));
   } catch (e) {}
 }
 
@@ -1876,6 +1899,7 @@ async function saveCharacter() {
     const data = await res.json();
     state.characterId = data.id;
     state.character = data;
+    addCharacterToBackup(data);
     statusEl.textContent = 'Saved.';
     statusEl.classList.add('saved');
   } catch (err) {
@@ -1902,7 +1926,14 @@ async function renderCharacterList() {
     if (!res.ok) throw new Error('Failed to load list');
     const list = await res.json();
     if (list.length === 0) {
-      listEl.innerHTML = '<li class="char-list-empty">No saved characters</li>';
+      const backups = getCharacterBackups();
+      if (backups.length > 0) {
+        listEl.innerHTML = '<li class="char-list-empty">No characters on the server (data may have been reset after an update).</li>' +
+          '<li class="char-list-restore"><button type="button" id="btn-restore-backups" class="btn btn-primary">Restore ' + backups.length + ' character(s) from this device</button></li>';
+        document.getElementById('btn-restore-backups').addEventListener('click', restoreFromBackup);
+      } else {
+        listEl.innerHTML = '<li class="char-list-empty">No saved characters</li>';
+      }
     } else {
       list.forEach(c => {
         const li = document.createElement('li');
@@ -1928,6 +1959,36 @@ async function renderCharacterList() {
   }
 }
 
+async function restoreFromBackup() {
+  const backups = getCharacterBackups();
+  if (backups.length === 0) return;
+  const listEl = document.getElementById('character-list');
+  const btn = document.getElementById('btn-restore-backups');
+  if (btn) { btn.disabled = true; btn.textContent = 'Restoring…'; }
+  try {
+    for (const char of backups) {
+      const payload = { ...char };
+      delete payload.id;
+      delete payload.userId;
+      delete payload.createdAt;
+      delete payload.updatedAt;
+      const res = await fetch(API_BASE + '/api/characters', {
+        method: 'POST',
+        ...API_CREDENTIALS,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Restore failed');
+      const data = await res.json();
+      addCharacterToBackup(data);
+    }
+    await renderCharacterList();
+  } catch (err) {
+    if (listEl) listEl.innerHTML = '<li class="char-list-empty" style="color:var(--danger)">Restore failed: ' + escapeHtml(err.message || 'Try again') + '</li>';
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Restore ' + getCharacterBackups().length + ' character(s) from this device'; }
+}
+
 document.getElementById('btn-load')?.addEventListener('click', async () => {
   await renderCharacterList();
   document.getElementById('load-modal').classList.remove('hidden');
@@ -1938,6 +1999,7 @@ async function loadCharacter(id) {
     const res = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(id), API_CREDENTIALS);
     if (!res.ok) throw new Error('Not found');
     const data = await res.json();
+    addCharacterToBackup(data);
     loadCharacterIntoForm(data);
     document.getElementById('load-modal').classList.add('hidden');
   } catch (err) {
