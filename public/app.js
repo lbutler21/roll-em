@@ -632,7 +632,7 @@ function getCharacterFromForm() {
     alignment: getValue('alignment'),
     playerName: getValue('playerName'),
     experiencePoints: parseInt(getValue('experiencePoints'), 10) || 0,
-    inspiration: parseInt(getValue('inspiration'), 10) || 0,
+    inspiration: (document.getElementById('inspiration') && document.getElementById('inspiration').checked) ? 1 : 0,
     proficiencyBonus: parseInt(getValue('proficiencyBonus'), 10) || 2,
     abilities,
     savingThrows,
