@@ -2531,6 +2531,7 @@ function renderSpellsTab() {
   const isCaster = SPELLCASTING_CLASSES.includes(classId);
 
   if (!isCaster) {
+    state.spellsKnown = [];
     if (hint) hint.textContent = 'Choose a spellcasting class (e.g. Wizard, Cleric, Bard) and set your level to see spells you can add.';
     if (hint) hint.classList.remove('hidden');
     if (wrap) wrap.classList.add('hidden');
@@ -2542,7 +2543,16 @@ function renderSpellsTab() {
 
   const getAbilityMod = (ability) => abilityModifier(parseInt(getValue('ability-' + ability), 10) || 10);
   const limitInfo = getSpellLimit(classId, charLevel, getAbilityMod);
-  const currentCount = (state.spellsKnown || []).filter(Boolean).length;
+  let currentCount = (state.spellsKnown || []).filter(Boolean).length;
+
+  if (limitInfo.limit === 0) {
+    state.spellsKnown = [];
+    currentCount = 0;
+  } else if (currentCount > limitInfo.limit) {
+    state.spellsKnown = (state.spellsKnown || []).filter(Boolean).slice(0, limitInfo.limit);
+    currentCount = state.spellsKnown.length;
+  }
+
   const atOrOverLimit = limitInfo.limit > 0 && currentCount >= limitInfo.limit;
 
   const limitEl = document.getElementById('spells-limit-display');
