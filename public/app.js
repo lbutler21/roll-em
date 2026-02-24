@@ -184,6 +184,16 @@ function updateLandingAndAppVisibility() {
     mainApp.classList.remove('hidden');
     adminPanel.classList.add('hidden');
     if (landing) landing.classList.add('hidden');
+    const adminViewBanner = document.getElementById('admin-view-banner');
+    const adminViewCharName = document.getElementById('admin-view-char-name');
+    if (adminViewBanner && adminViewCharName) {
+      if (state.adminViewingCharacter) {
+        adminViewBanner.classList.remove('hidden');
+        adminViewCharName.textContent = state.adminViewingCharacterName || getValue('name') || 'Unnamed';
+      } else {
+        adminViewBanner.classList.add('hidden');
+      }
+    }
   } else {
     mainApp.classList.add('hidden');
     adminPanel.classList.add('hidden');
@@ -226,8 +236,24 @@ async function loadAdminPanel() {
 
     if (!characters.length) charsEl.innerHTML = '<p class="admin-empty">No characters yet.</p>';
     else {
-      charsEl.innerHTML = '<table class="admin-table"><thead><tr><th>Character</th><th>Class</th><th>Level</th><th>Owner</th><th>Updated</th><th></th></tr></thead><tbody>' +
-        characters.map(c => '<tr><td>' + escapeHtml(c.name || '') + '</td><td>' + escapeHtml(c.class || '—') + '</td><td>' + (c.level || 1) + '</td><td>' + escapeHtml(userMap[c.userId] || c.userId || '—') + '</td><td>' + escapeHtml(c.updatedAt || '') + '</td><td><button type="button" class="btn btn-ghost btn-sm btn-danger admin-delete-char" data-id="' + escapeHtml(c.id) + '">Delete</button></td></tr>').join('') + '</tbody></table>';
+      charsEl.innerHTML = '<table class="admin-table"><thead><tr><th>Character</th><th>Class</th><th>Level</th><th>Owner</th><th>Updated</th><th></th><th></th></tr></thead><tbody>' +
+        characters.map(c => '<tr><td>' + escapeHtml(c.name || '') + '</td><td>' + escapeHtml(c.class || '—') + '</td><td>' + (c.level || 1) + '</td><td>' + escapeHtml(userMap[c.userId] || c.userId || '—') + '</td><td>' + escapeHtml(c.updatedAt || '') + '</td><td><button type="button" class="btn btn-ghost btn-sm admin-view-char" data-id="' + escapeHtml(c.id) + '">View</button></td><td><button type="button" class="btn btn-ghost btn-sm btn-danger admin-delete-char" data-id="' + escapeHtml(c.id) + '">Delete</button></td></tr>').join('') + '</tbody></table>';
+      charsEl.querySelectorAll('.admin-view-char').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            const res = await fetch(API_BASE + '/api/admin/characters/' + encodeURIComponent(btn.dataset.id), API_CREDENTIALS);
+            if (!res.ok) throw new Error('Could not load character');
+            const data = await res.json();
+            state.characterId = data.id;
+            state.character = data;
+            state.adminViewingCharacter = true;
+            state.adminViewingCharacterName = data.name || 'Unnamed';
+            loadCharacterIntoForm(data);
+            location.hash = '';
+            updateLandingAndAppVisibility();
+          } catch (e) { alert('Could not load character.'); }
+        });
+      });
       charsEl.querySelectorAll('.admin-delete-char').forEach(btn => {
         btn.addEventListener('click', async () => {
           if (!confirm('Delete this character? This cannot be undone.')) return;
@@ -613,7 +639,9 @@ const state = {
   featureChoices: {},
   spellsKnown: [],
   /** spellSlotsUsed[level] = array of booleans (true = used). Level 1–9. */
-  spellSlotsUsed: {}
+  spellSlotsUsed: {},
+  adminViewingCharacter: false,
+  adminViewingCharacterName: ''
 };
 
 function getCharacterFromForm() {
@@ -2579,6 +2607,13 @@ window.addEventListener('hashchange', () => {
 document.getElementById('admin-back-to-sheet')?.addEventListener('click', (e) => {
   e.preventDefault();
   location.hash = '';
+  updateLandingAndAppVisibility();
+});
+document.getElementById('admin-back-to-admin')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  state.adminViewingCharacter = false;
+  state.adminViewingCharacterName = '';
+  location.hash = 'admin';
   updateLandingAndAppVisibility();
 });
 document.getElementById('backdoor-submit')?.addEventListener('click', async () => {

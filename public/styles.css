@@ -383,6 +383,21 @@
   text-decoration: underline;
 }
 
+.admin-view-banner {
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--ink);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.admin-view-banner .admin-link {
+  margin: 0;
+  margin-left: 0.25rem;
+}
+
 .admin-section {
   background: var(--card-bg);
   border-radius: var(--radius);

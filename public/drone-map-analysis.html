@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drone taxi landing – map analysis</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; background: #1a1a1a; color: #e0e0e0; }
+    h1 { font-size: 1.25rem; margin-top: 0; }
+    .map-container { position: relative; display: inline-block; max-width: 100%; }
+    .map-container img { display: block; max-width: 100%; height: auto; vertical-align: middle; }
+    .overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+    .marker { position: absolute; transform: translate(-50%, -50%); width: 24px; height: 24px; border-radius: 50%; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
+    .marker.landing { background: rgba(59, 130, 246, 0.5); border-color: #3b82f6; color: #3b82f6; }
+    .marker.road   { background: rgba(239, 68, 68, 0.5); border-color: #ef4444; color: #ef4444; }
+    .marker-label { position: absolute; white-space: nowrap; font-size: 10px; font-weight: bold; transform: translate(-50%, -50%); }
+    .marker.landing + .marker-label { color: #60a5fa; }
+    .marker.road + .marker-label { color: #f87171; }
+    section { margin: 1.5rem 0; padding: 1rem; background: #2a2a2a; border-radius: 8px; }
+    section h2 { font-size: 1rem; margin-top: 0; }
+    ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .legend { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .legend span { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+    .legend .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; }
+    .legend .dot.blue { background: rgba(59, 130, 246, 0.5); border-color: #3b82f6; }
+    .legend .dot.red  { background: rgba(239, 68, 68, 0.5); border-color: #ef4444; }
+    .note { font-size: 0.85rem; color: #94a3b8; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Drone taxi landing – where you might be</h1>
+
+  <div class="legend">
+    <span><span class="dot blue"></span> Possible landing zones (20 mi E → no major road)</span>
+    <span><span class="dot red"></span> Possible “you are here” on a major road (after 20 mi N)</span>
+  </div>
+
+  <div class="map-container">
+    <!-- Use your printed map image; path is relative to this file -->
+    <img src="texas-map.png" alt="Central Texas map (Bastrop, Austin, San Antonio region)" id="mapImg" />
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+  </div>
+
+  <p class="note">To see the map: save your printed Central Texas map as <code>texas-map.png</code> in the <code>public/</code> folder (same folder as this HTML file), then open this file in a browser.</p>
+
+  <section>
+    <h2>1. Locations consistent with “20 mi East, no major road” (blue)</h2>
+    <p>You are within 100 miles of Bastrop and walked 20 miles due east without hitting a major road. So your landing site must lie in a region that is <strong>at least 20 miles west</strong> of the nearest major road to the east (or in a gap where no major road lies within 20 miles east).</p>
+    <ul>
+      <li><strong>West of I-35</strong> (hill country west of Austin/San Marcos): 20 mi east might still be short of I-35.</li>
+      <li><strong>Block between US-290 and I-10</strong>, south of Bastrop and east of I-35: large rural area; 20 mi east can stay in empty land.</li>
+      <li><strong>West of US-183</strong> in the Bastrop–Gonzales corridor: 20 mi east could still be west of US-183 or in a gap.</li>
+      <li><strong>West of US-87</strong> near Fredericksburg/Kerrville: within 100 mi of Bastrop; 20 mi east might not reach US-87.</li>
+    </ul>
+    <p>Blue markers on the map show several such candidate landing zones.</p>
+  </section>
+
+  <section>
+    <h2>2. “You are here” on a major road (red) – after 20 mi North</h2>
+    <p>After 20 mi east you were at point <em>P</em>. You then walked 20 mi north and hit a major road at point <em>Q</em>. So <em>Q</em> = landing + (20 mi E, 20 mi N). So your landing was 20 mi west and 20 mi south of <em>Q</em>. We need <em>Q</em> on a major road and the point 20 mi south of <em>Q</em> (your position after the east leg) with no major road.</p>
+    <ul>
+      <li><strong>I-35</strong> between San Marcos and New Braunfels (or south of San Antonio): 20 mi south of this stretch is rural; landing 20 mi W and 20 mi S is west of I-35, within 100 mi of Bastrop.</li>
+      <li><strong>US-183</strong> south of Bastrop toward Gonzales: 20 mi south can be empty; landing in the wedge east of I-35, within range.</li>
+      <li><strong>US-290</strong> east of Bastrop (e.g. toward Brenham): 20 mi south is rural; landing south of US-290, within 100 mi.</li>
+      <li><strong>I-10</strong> near Seguin/Gonzales: 20 mi south is empty; landing south of I-10, still within ~100 mi of Bastrop.</li>
+    </ul>
+    <p>Red markers show the most plausible “you are here” segments on major roads.</p>
+  </section>
+
+  <section>
+    <h2>3. Summary</h2>
+    <p><strong>Prior (blue):</strong> Landing sites consistent with “20 mi east, no road” are in the hill country west of I-35, in the US-290 / I-10 gap south of Bastrop, or west of US-183/US-87, all within 100 mi of Bastrop.</p>
+    <p><strong>Posterior (red):</strong> The road you hit is most likely <strong>I-35</strong> (south of San Marcos or New Braunfels), <strong>US-183</strong> (south of Bastrop), <strong>US-290</strong> (east of Bastrop), or <strong>I-10</strong> (near Seguin). Your best guesses for “where you are” are those segments; exact spot depends on which road and how far you walked along it.</p>
+  </section>
+
+  <script>
+    (function() {
+      var img = document.getElementById('mapImg');
+      var overlay = document.getElementById('overlay');
+
+      // Approximate positions as % of image (left%, top%). Calibrate if your map differs.
+      // Based on: Austin ~center, Bastrop SE, I-35 vertical center, scale ~20 mi.
+      var landingCandidates = [
+        { left: 38, top: 52, label: 'W of I-35' },
+        { left: 52, top: 58, label: '290/I-10 gap' },
+        { left: 48, top: 54, label: 'W of US-183' },
+        { left: 28, top: 48, label: 'W of US-87' }
+      ];
+      var roadHitCandidates = [
+        { left: 50, top: 70, label: 'I-35 (San Marcos)' },
+        { left: 54, top: 62, label: 'US-183' },
+        { left: 60, top: 50, label: 'US-290' },
+        { left: 54, top: 76, label: 'I-10 (Seguin)' }
+      ];
+
+      function placeMarkers() {
+        overlay.innerHTML = '';
+        var w = img.offsetWidth, h = img.offsetHeight;
+        if (!w || !h) return;
+
+        landingCandidates.forEach(function(p, i) {
+          var el = document.createElement('div');
+          el.className = 'marker landing';
+          el.setAttribute('style', 'left:' + (p.left/100*w) + 'px; top:' + (p.top/100*h) + 'px;');
+          el.textContent = (i+1);
+          overlay.appendChild(el);
+          var lbl = document.createElement('div');
+          lbl.className = 'marker-label';
+          lbl.style.left = (p.left/100*w) + 'px';
+          lbl.style.top = (p.top/100*h - 18) + 'px';
+          lbl.textContent = p.label;
+          lbl.style.color = '#60a5fa';
+          overlay.appendChild(lbl);
+        });
+
+        roadHitCandidates.forEach(function(p, i) {
+          var el = document.createElement('div');
+          el.className = 'marker road';
+          el.setAttribute('style', 'left:' + (p.left/100*w) + 'px; top:' + (p.top/100*h) + 'px;');
+          el.textContent = (i+1);
+          overlay.appendChild(el);
+          var lbl = document.createElement('div');
+          lbl.className = 'marker-label';
+          lbl.style.left = (p.left/100*w) + 'px';
+          lbl.style.top = (p.top/100*h - 18) + 'px';
+          lbl.textContent = p.label;
+          lbl.style.color = '#f87171';
+          overlay.appendChild(lbl);
+        });
+      }
+
+      img.onload = placeMarkers;
+      if (img.complete) placeMarkers();
+      window.addEventListener('resize', placeMarkers);
+    })();
+  </script>
+</body>
+</html>
