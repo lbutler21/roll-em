@@ -691,6 +691,9 @@ const SPELLS_KNOWN_SORCERER = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 13, 13, 1
 const SPELLS_KNOWN_WARLOCK = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15];
 const SPELLS_KNOWN_ARTIFICER = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11];
 
+// 1/3 casters (Eldritch Knight, Arcane Trickster): 0 at 1–2, then 2/2/2/2, 3/3/3/3, 4 from 11 on. Index 0 = level 1.
+const SPELLS_KNOWN_THIRDCaster = [0, 0, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+
 // 2014 5e full caster spell slots by character level [1st, 2nd, 3rd, ... 9th]. Index 0 = level 1.
 const SPELL_SLOTS_FULL = [
   [2], [3], [4,2], [4,3], [4,3,2], [4,3,3], [4,3,3,1], [4,3,3,2], [4,3,3,3,1], [4,3,3,3,2],
@@ -698,15 +701,38 @@ const SPELL_SLOTS_FULL = [
   [4,3,3,3,2,1,1,1,1], [4,3,3,3,3,1,1,1,1], [4,3,3,3,3,2,1,1,1], [4,3,3,3,3,2,2,1,1,1]
 ];
 
+/** True if character has spellcasting from subclass (Eldritch Knight, Arcane Trickster) at this level. */
+function hasSubclassSpellcasting(classId, level) {
+  const lvl = Math.min(20, Math.max(1, level || 1));
+  if (lvl < 3) return false;
+  const fc = state.featureChoices || {};
+  return (classId === 'fighter' && fc.martialArchetype === 'eldritchKnight') ||
+    (classId === 'rogue' && fc.roguishArchetype === 'arcaneTrickster');
+}
+
+/** True if character can have spells (full/half/third caster class or EK/AT at 3+). */
+function hasSpellcasting(classId, level) {
+  if (SPELLCASTING_CLASSES.includes(classId)) return true;
+  return hasSubclassSpellcasting(classId, level);
+}
+
 /** Returns array of 9 slot counts [1st, 2nd, ... 9th]. Warlock: one level has slots, rest 0. */
 function getSpellSlotsArray(classId, level) {
   const lvl = Math.min(20, Math.max(1, level || 1));
   const out = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  if (!SPELLCASTING_CLASSES.includes(classId)) return out;
+  const subclassCaster = hasSubclassSpellcasting(classId, lvl);
+  if (!SPELLCASTING_CLASSES.includes(classId) && !subclassCaster) return out;
   if (classId === 'warlock') {
     const count = lvl >= 11 ? 3 : lvl >= 2 ? 2 : 1;
     const slotLevel = lvl >= 9 ? 5 : lvl >= 7 ? 4 : lvl >= 5 ? 3 : lvl >= 3 ? 2 : 1;
     out[slotLevel - 1] = count;
+    return out;
+  }
+  if (subclassCaster) {
+    const slotLevel = Math.floor(lvl / 3);
+    if (slotLevel < 1) return out;
+    const row = SPELL_SLOTS_FULL[Math.min(slotLevel, 20) - 1];
+    if (row && row.length) row.forEach((n, i) => { if (i < 9) out[i] = n || 0; });
     return out;
   }
   const halfCasters = ['paladin', 'ranger', 'artificer'];
@@ -720,12 +746,24 @@ function getSpellSlotsArray(classId, level) {
 
 function getSpellSlotsText(classId, level) {
   const lvl = Math.min(20, Math.max(1, level || 1));
-  if (!SPELLCASTING_CLASSES.includes(classId)) return '';
+  const subclassCaster = hasSubclassSpellcasting(classId, lvl);
+  if (!SPELLCASTING_CLASSES.includes(classId) && !subclassCaster) return '';
   if (classId === 'warlock') {
     const count = lvl >= 11 ? 3 : lvl >= 2 ? 2 : 1;
     const slotLevel = lvl >= 9 ? 5 : lvl >= 7 ? 4 : lvl >= 5 ? 3 : lvl >= 3 ? 2 : 1;
     const ord = slotLevel === 1 ? '1st' : slotLevel === 2 ? '2nd' : slotLevel === 3 ? '3rd' : slotLevel === 4 ? '4th' : '5th';
     return count + ' slot' + (count !== 1 ? 's' : '') + ' (' + ord + ' level)';
+  }
+  if (subclassCaster) {
+    const slotLevel = Math.floor(lvl / 3);
+    if (slotLevel < 1) return '—';
+    const row = SPELL_SLOTS_FULL[Math.min(slotLevel, 20) - 1];
+    if (!row || !row.length) return '—';
+    const parts = [];
+    ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'].forEach((ord, i) => {
+      if (row[i] && row[i] > 0) parts.push(row[i] + '×' + ord);
+    });
+    return parts.length ? parts.join(' ') : '—';
   }
   const halfCasters = ['paladin', 'ranger', 'artificer'];
   const slotLevel = halfCasters.includes(classId) ? Math.floor(lvl / 2) : lvl;
@@ -742,6 +780,8 @@ function getSpellSlotsText(classId, level) {
 function getSpellLimit(classId, level, getAbilityMod) {
   const lvl = Math.min(20, Math.max(1, level || 1));
   const idx = lvl - 1;
+  if (hasSubclassSpellcasting(classId, lvl))
+    return { limit: SPELLS_KNOWN_THIRDCaster[idx] ?? 0, label: 'Spells known', type: 'known' };
   switch (classId) {
     case 'bard':
       return { limit: SPELLS_KNOWN_BARD[idx] ?? 0, label: 'Spells known', type: 'known' };
@@ -2513,8 +2553,18 @@ async function loadSpellsForSheet() {
 function getSpellsFilteredForCharacter() {
   const classId = (getValue('class') || '').toLowerCase().trim();
   const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
-  if (!classId || !SPELLCASTING_CLASSES.includes(classId)) return [];
+  const subclassCaster = hasSubclassSpellcasting(classId, charLevel);
+  if (!classId || (!SPELLCASTING_CLASSES.includes(classId) && !subclassCaster)) return [];
   if (!sheetSpellsCache || !sheetSpellsCache.length) return [];
+  if (subclassCaster) {
+    const maxSpellLevel = Math.floor(charLevel / 3);
+    return sheetSpellsCache.filter(s => {
+      const spellLevel = s.level ?? 0;
+      if (spellLevel > maxSpellLevel) return false;
+      const classes = s.classes || [];
+      return classes.some(c => (c || '').toLowerCase().trim() === 'wizard');
+    });
+  }
   return sheetSpellsCache.filter(s => {
     const spellLevel = s.level ?? 0;
     if (spellLevel > charLevel) return false;
@@ -2528,11 +2578,11 @@ function renderSpellsTab() {
   const wrap = document.getElementById('spells-available-wrap');
   const classId = (getValue('class') || '').toLowerCase().trim();
   const charLevel = Math.min(20, Math.max(1, parseInt(getValue('level'), 10) || 1));
-  const isCaster = SPELLCASTING_CLASSES.includes(classId);
+  const isCaster = hasSpellcasting(classId, charLevel);
 
   if (!isCaster) {
     state.spellsKnown = [];
-    if (hint) hint.textContent = 'Choose a spellcasting class (e.g. Wizard, Cleric, Bard) and set your level to see spells you can add.';
+    if (hint) hint.textContent = 'Choose a spellcasting class (e.g. Wizard, Cleric, Bard) or a subclass that grants spells (Eldritch Knight, Arcane Trickster at 3rd level) and set your level to see spells you can add.';
     if (hint) hint.classList.remove('hidden');
     if (wrap) wrap.classList.add('hidden');
     return;
