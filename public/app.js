@@ -2556,20 +2556,29 @@ function getSpellsFilteredForCharacter() {
   const subclassCaster = hasSubclassSpellcasting(classId, charLevel);
   if (!classId || (!SPELLCASTING_CLASSES.includes(classId) && !subclassCaster)) return [];
   if (!sheetSpellsCache || !sheetSpellsCache.length) return [];
+  let result;
   if (subclassCaster) {
     const maxSpellLevel = Math.floor(charLevel / 3);
-    return sheetSpellsCache.filter(s => {
+    result = sheetSpellsCache.filter(s => {
       const spellLevel = s.level ?? 0;
       if (spellLevel > maxSpellLevel) return false;
       const classes = s.classes || [];
       return classes.some(c => (c || '').toLowerCase().trim() === 'wizard');
     });
+  } else {
+    result = sheetSpellsCache.filter(s => {
+      const spellLevel = s.level ?? 0;
+      if (spellLevel > charLevel) return false;
+      const classes = s.classes || [];
+      return classes.some(c => (c || '').toLowerCase().trim() === classId);
+    });
   }
-  return sheetSpellsCache.filter(s => {
-    const spellLevel = s.level ?? 0;
-    if (spellLevel > charLevel) return false;
-    const classes = s.classes || [];
-    return classes.some(c => (c || '').toLowerCase().trim() === classId);
+  const seen = new Set();
+  return result.filter(s => {
+    const key = (s.name || '').trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
@@ -2851,7 +2860,13 @@ function getReferenceData() {
       if (q && !(s.name || '').toLowerCase().includes(q) && !(s.school || '').toLowerCase().includes(q) && !(s.desc || '').toLowerCase().includes(q)) return false;
       return true;
     });
-    return list;
+    const seen = new Set();
+    return list.filter(s => {
+      const key = (s.name || '').trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
   if (refState.category === 'equipment') {
     let list = refState.equipment || [];
