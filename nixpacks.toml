@@ -1,0 +1,8 @@
+# Avoid "npm warn config production Use --omit=dev instead" on Railway:
+# - Install with --omit=dev instead of relying on deprecated production config
+# - Start with node directly so npm is not invoked at runtime (no warning)
+[phases.install]
+cmds = ["npm install --omit=dev"]
+
+[start]
+cmd = "node server.js"
