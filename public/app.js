@@ -2608,6 +2608,55 @@ function getSpellsFilteredForCharacter() {
   });
 }
 
+/** Parse search box text into level filter, school filter, and name search. Recognizes e.g. "cantrip", "3rd level", "evocation". */
+function parseSpellSearchQuery(searchQ) {
+  const q = (searchQ || '').toLowerCase().trim();
+  if (!q) return { levelFilter: undefined, schoolFilter: undefined, namePart: '' };
+  const words = q.split(/\s+/).filter(Boolean);
+  let levelFilter = undefined;
+  let schoolFilter = undefined;
+  const nameWords = [];
+  // All level types: cantrip (0) and 1st–9th (ordinals, words, or digits)
+  const levelTokens = {
+    cantrip: 0, '0th': 0, '0': 0,
+    '1st': 1, first: 1, '1': 1,
+    '2nd': 2, second: 2, '2': 2,
+    '3rd': 3, third: 3, '3': 3,
+    '4th': 4, fourth: 4, '4': 4,
+    '5th': 5, fifth: 5, '5': 5,
+    '6th': 6, sixth: 6, '6': 6,
+    '7th': 7, seventh: 7, '7': 7,
+    '8th': 8, eighth: 8, '8': 8,
+    '9th': 9, ninth: 9, '9': 9
+  };
+  // All 5e schools (exact word match, case-insensitive)
+  const schoolTokens = ['abjuration', 'conjuration', 'divination', 'enchantment', 'evocation', 'illusion', 'necromancy', 'transmutation'];
+  let i = 0;
+  while (i < words.length) {
+    const w = words[i];
+    const wNext = i + 1 < words.length ? words[i + 1] : '';
+    if (levelFilter === undefined && (levelTokens[w] !== undefined || (w === 'level' && levelTokens[wNext] !== undefined))) {
+      if (w === 'level') { levelFilter = levelTokens[wNext]; i += 2; continue; }
+      levelFilter = levelTokens[w];
+      i++;
+      if (i < words.length && words[i] === 'level') i++;
+      continue;
+    }
+    if (schoolFilter === undefined) {
+      const school = schoolTokens.find(s => s === w);
+      if (school) {
+        schoolFilter = school.charAt(0).toUpperCase() + school.slice(1);
+        i++;
+        continue;
+      }
+    }
+    nameWords.push(w);
+    i++;
+  }
+  const namePart = nameWords.join(' ').trim();
+  return { levelFilter, schoolFilter, namePart };
+}
+
 function renderSpellsTab() {
   const hint = document.getElementById('spells-hint');
   const wrap = document.getElementById('spells-available-wrap');
@@ -2727,10 +2776,13 @@ function renderSpellsTab() {
 
   const availableList = document.getElementById('spells-available-list');
   const knownList = document.getElementById('spells-known-list');
-  const searchQ = (document.getElementById('spells-search')?.value || '').toLowerCase().trim();
+  const searchRaw = (document.getElementById('spells-search')?.value || '').trim();
+  const { levelFilter, schoolFilter, namePart } = parseSpellSearchQuery(searchRaw);
 
   let filtered = filteredForChar;
-  if (searchQ) filtered = filtered.filter(s => (s.name || '').toLowerCase().includes(searchQ));
+  if (levelFilter !== undefined) filtered = filtered.filter(s => Number(s.level ?? 0) === levelFilter);
+  if (schoolFilter) filtered = filtered.filter(s => (String(s.school || '').toLowerCase()) === schoolFilter.toLowerCase());
+  if (namePart) filtered = filtered.filter(s => (s.name || '').toLowerCase().includes(namePart.toLowerCase()));
   filtered.sort((a, b) => {
     if (a.level !== b.level) return (a.level ?? 0) - (b.level ?? 0);
     return (a.name || '').localeCompare(b.name || '');
