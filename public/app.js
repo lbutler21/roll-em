@@ -2713,43 +2713,36 @@ function renderSpellsTab() {
   const getAbilityMod = (ability) => abilityModifier(parseInt(getValue('ability-' + ability), 10) || 10);
   const limitInfo = getSpellLimit(classId, charLevel, getAbilityMod);
   const cantripLimit = getCantripLimit(classId, charLevel);
-  let currentCount = (state.spellsKnown || []).filter(Boolean).length;
+  // PHB "Spells Known" / "Spells Prepared" is leveled spells (1st+) only; cantrips use a separate limit. Keep both independent.
+  const leveledSpellsLimit = limitInfo.limit || 0;
 
   // Build name -> spell level map (0 = cantrip) for known-spell lookups
   const filteredForChar = getSpellsFilteredForCharacter();
   const spellLevelByName = new Map();
   filteredForChar.forEach(s => { spellLevelByName.set((s.name || '').trim(), s.level ?? 0); });
 
+  const knownListRaw = (state.spellsKnown || []).filter(Boolean);
+  const cantripsInList = knownListRaw.filter(name => spellLevelByName.get((name || '').trim()) === 0);
+  const leveledInList = knownListRaw.filter(name => spellLevelByName.get((name || '').trim()) !== 0);
+
   if (limitInfo.limit === 0) {
     state.spellsKnown = [];
-    currentCount = 0;
-  } else if (currentCount > limitInfo.limit) {
-    state.spellsKnown = (state.spellsKnown || []).filter(Boolean).slice(0, limitInfo.limit);
-    currentCount = state.spellsKnown.length;
+  } else {
+    const keptCantrips = cantripLimit >= 0 ? cantripsInList.slice(0, cantripLimit) : cantripsInList;
+    const keptLeveled = leveledSpellsLimit >= 0 ? leveledInList.slice(0, leveledSpellsLimit) : leveledInList;
+    state.spellsKnown = [...keptLeveled, ...keptCantrips];
   }
 
-  // Enforce cantrip cap: only allow up to cantripLimit cantrips in known list
-  if (cantripLimit >= 0 && (state.spellsKnown || []).length > 0) {
-    const known = (state.spellsKnown || []).filter(Boolean);
-    const cantrips = known.filter(name => spellLevelByName.get((name || '').trim()) === 0);
-    const nonCantrips = known.filter(name => spellLevelByName.get((name || '').trim()) !== 0);
-    if (cantrips.length > cantripLimit) {
-      const keptCantrips = cantrips.slice(0, cantripLimit);
-      state.spellsKnown = [...nonCantrips, ...keptCantrips];
-      currentCount = state.spellsKnown.length;
-    }
-  }
-
+  const currentLeveledCount = (state.spellsKnown || []).filter(Boolean).filter(name => spellLevelByName.get((name || '').trim()) !== 0).length;
   const currentCantripCount = (state.spellsKnown || []).filter(Boolean).filter(name => spellLevelByName.get((name || '').trim()) === 0).length;
-  const atOrOverLimit = limitInfo.limit > 0 && currentCount >= limitInfo.limit;
+  const atOrOverLeveledLimit = leveledSpellsLimit > 0 && currentLeveledCount >= leveledSpellsLimit;
   const atOrOverCantripLimit = cantripLimit > 0 && currentCantripCount >= cantripLimit;
 
   const limitEl = document.getElementById('spells-limit-display');
   if (limitEl) {
-    let limitText = limitInfo.label + ': ' + currentCount + ' / ' + limitInfo.limit;
-    if (cantripLimit > 0) limitText += ' (Cantrips: ' + currentCantripCount + ' / ' + cantripLimit + ')';
+    let limitText = limitInfo.label + ': ' + currentLeveledCount + ' / ' + leveledSpellsLimit + ' (Cantrips: ' + currentCantripCount + ' / ' + cantripLimit + ')';
     limitEl.textContent = limitText;
-    limitEl.classList.toggle('spells-limit-over', limitInfo.limit > 0 && currentCount > limitInfo.limit);
+    limitEl.classList.toggle('spells-limit-over', (leveledSpellsLimit > 0 && currentLeveledCount > leveledSpellsLimit) || (cantripLimit > 0 && currentCantripCount > cantripLimit));
   }
 
   const slotsEl = document.getElementById('spells-slots-display');
@@ -2838,15 +2831,14 @@ function renderSpellsTab() {
       row.className = 'spells-list-row';
       const nameEsc = escapeHtml(spell.name || '');
       const isCantrip = spell.level === 0;
-      const cannotAddCantrip = isCantrip && atOrOverCantripLimit;
-      const addDisabled = (atOrOverLimit || cannotAddCantrip) ? ' disabled' : '';
-      const addDimmed = (atOrOverLimit || cannotAddCantrip) ? ' spell-add-btn--at-limit' : '';
+      const atLimitForThis = isCantrip ? atOrOverCantripLimit : atOrOverLeveledLimit;
+      const addDisabled = atLimitForThis ? ' disabled' : '';
+      const addDimmed = atLimitForThis ? ' spell-add-btn--at-limit' : '';
       let addTitle = '';
-      if (atOrOverLimit) addTitle = ' title="At maximum ' + limitInfo.label.toLowerCase() + '"';
-      else if (cannotAddCantrip) addTitle = ' title="At maximum cantrips known (' + cantripLimit + ')"';
+      if (atLimitForThis) addTitle = isCantrip ? ' title="At maximum cantrips known (' + cantripLimit + ')"' : ' title="At maximum ' + limitInfo.label.toLowerCase() + ' (' + leveledSpellsLimit + ')"';
       row.innerHTML = '<span class="spell-level-tag">[' + levelStr + ']</span> <span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <button type="button" class="btn btn-ghost btn-sm spell-add-btn' + addDimmed + '" data-name="' + nameEsc + '"' + addDisabled + addTitle + '>Add</button>';
       const addBtn = row.querySelector('.spell-add-btn');
-      if (addBtn && !atOrOverLimit && !cannotAddCantrip) {
+      if (addBtn && !atLimitForThis) {
         addBtn.addEventListener('click', () => {
           const name = (addBtn.dataset.name || '').trim();
           if (name && !state.spellsKnown.includes(name)) state.spellsKnown.push(name);
