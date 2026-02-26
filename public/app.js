@@ -720,6 +720,41 @@ function getCantripLimit(classId, level) {
   }
 }
 
+// 2014 5e spells granted by race/subrace (PHB/SRD). minLevel = character level at which spell is gained. Not counted against spells known.
+const RACIAL_GRANTED_SPELLS = {
+  tiefling: [
+    { name: 'Thaumaturgy', minLevel: 1 },
+    { name: 'Hellish Rebuke', minLevel: 3 },
+    { name: 'Darkness', minLevel: 5 }
+  ],
+  elf: {
+    drow: [
+      { name: 'Dancing Lights', minLevel: 1 },
+      { name: 'Faerie Fire', minLevel: 3 },
+      { name: 'Darkness', minLevel: 5 }
+    ]
+  },
+  gnome: {
+    forest: [
+      { name: 'Minor Illusion', minLevel: 1 }
+    ]
+  }
+};
+
+function getRacialGrantedSpells(raceId, subraceId, characterLevel) {
+  const lvl = Math.min(20, Math.max(1, characterLevel || 1));
+  const out = [];
+  if (!raceId) return out;
+  const race = (raceId || '').toLowerCase().trim();
+  const sub = (subraceId || '').toLowerCase().trim();
+  const entry = RACIAL_GRANTED_SPELLS[race];
+  if (!entry) return out;
+  const list = Array.isArray(entry) ? entry : (sub && entry[sub]) ? entry[sub] : null;
+  if (!list || !list.length) return out;
+  list.forEach(({ name, minLevel }) => { if (lvl >= minLevel && name) out.push(name); });
+  return out;
+}
+
 // 2014 5e full caster spell slots by character level [1st, 2nd, 3rd, ... 9th]. Index 0 = level 1.
 const SPELL_SLOTS_FULL = [
   [2], [3], [4,2], [4,3], [4,3,2], [4,3,3], [4,3,3,1], [4,3,3,2], [4,3,3,3,1], [4,3,3,3,2],
@@ -1894,8 +1929,8 @@ document.querySelectorAll('.bg-sub-btn').forEach(btn => {
 });
 ['name', 'level', 'race', 'class', 'experiencePoints'].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('input', () => { updateBanner(); if (id === 'class' || id === 'level') renderSpellsTab(); });
-  if (el) el.addEventListener('change', () => { updateBanner(); if (id === 'class' || id === 'level') renderSpellsTab(); });
+  if (el) el.addEventListener('input', () => { updateBanner(); if (id === 'class' || id === 'level' || id === 'race') renderSpellsTab(); });
+  if (el) el.addEventListener('change', () => { updateBanner(); if (id === 'class' || id === 'level' || id === 'race') renderSpellsTab(); });
 });
 
 function resetToBlankCharacter() {
@@ -2774,6 +2809,10 @@ function renderSpellsTab() {
     });
   }
 
+  const raceId = (getValue('race') || '').trim();
+  const subraceId = (getValue('subrace') || '').trim();
+  const racialGrantedSpells = getRacialGrantedSpells(raceId, subraceId, charLevel);
+
   const availableList = document.getElementById('spells-available-list');
   const knownList = document.getElementById('spells-known-list');
   const searchRaw = (document.getElementById('spells-search')?.value || '').trim();
@@ -2788,8 +2827,8 @@ function renderSpellsTab() {
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  const knownSet = new Set((state.spellsKnown || []).map(n => (n || '').trim()).filter(Boolean));
-  const available = filtered.filter(s => !knownSet.has((s.name || '').trim()));
+  const knownSetLower = new Set([...(state.spellsKnown || []).map(n => (n || '').trim().toLowerCase()).filter(Boolean), ...racialGrantedSpells.map(n => (n || '').trim().toLowerCase()).filter(Boolean)]);
+  const available = filtered.filter(s => !knownSetLower.has((s.name || '').trim().toLowerCase()));
 
   if (availableList) {
     availableList.innerHTML = '';
@@ -2820,6 +2859,15 @@ function renderSpellsTab() {
 
   if (knownList) {
     knownList.innerHTML = '';
+    racialGrantedSpells.forEach(name => {
+      const spellMatch = (sheetSpellsCache || []).find(s => (s.name || '').trim().toLowerCase() === (name || '').trim().toLowerCase());
+      const displayName = (spellMatch && spellMatch.name) ? (spellMatch.name || '').trim() : name;
+      const row = document.createElement('div');
+      row.className = 'spells-list-row spells-known-granted';
+      const nameEsc = escapeHtml(displayName);
+      row.innerHTML = '<span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <span class="spell-granted-tag" title="Granted by race; does not count against spells known">(granted)</span>';
+      knownList.appendChild(row);
+    });
     const knownNames = (state.spellsKnown || []).filter(Boolean);
     knownNames.forEach(name => {
       const row = document.createElement('div');
@@ -3176,6 +3224,7 @@ updateBanner();
 document.getElementById('subrace')?.addEventListener('change', () => {
   updateAutoFeatures();
   updateBanner();
+  if (typeof renderSpellsTab === 'function') renderSpellsTab();
 });
 
 updateModifiers();
