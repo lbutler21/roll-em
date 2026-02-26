@@ -694,6 +694,32 @@ const SPELLS_KNOWN_ARTIFICER = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 
 // 1/3 casters (Eldritch Knight, Arcane Trickster): 0 at 1–2, then 2/2/2/2, 3/3/3/3, 4 from 11 on. Index 0 = level 1.
 const SPELLS_KNOWN_THIRDCaster = [0, 0, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
 
+// 2014 5e cantrips known by level (PHB/SRD). Index 0 = level 1. +1 at 4th and 10th for most; Artificer +1 at 5,9,13,17.
+const CANTRIPS_KNOWN_BARD = [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+const CANTRIPS_KNOWN_CLERIC = [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+const CANTRIPS_KNOWN_DRUID = [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+const CANTRIPS_KNOWN_SORCERER = [4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6];
+const CANTRIPS_KNOWN_WARLOCK = [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+const CANTRIPS_KNOWN_WIZARD = [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+const CANTRIPS_KNOWN_ARTIFICER = [2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6];
+const CANTRIPS_KNOWN_THIRDCaster = [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]; // EK/AT
+
+function getCantripLimit(classId, level) {
+  const lvl = Math.min(20, Math.max(1, level || 1));
+  const idx = lvl - 1;
+  if (hasSubclassSpellcasting(classId, lvl)) return CANTRIPS_KNOWN_THIRDCaster[idx] ?? 0;
+  switch (classId) {
+    case 'bard': return CANTRIPS_KNOWN_BARD[idx] ?? 0;
+    case 'cleric': return CANTRIPS_KNOWN_CLERIC[idx] ?? 0;
+    case 'druid': return CANTRIPS_KNOWN_DRUID[idx] ?? 0;
+    case 'sorcerer': return CANTRIPS_KNOWN_SORCERER[idx] ?? 0;
+    case 'warlock': return CANTRIPS_KNOWN_WARLOCK[idx] ?? 0;
+    case 'wizard': return CANTRIPS_KNOWN_WIZARD[idx] ?? 0;
+    case 'artificer': return CANTRIPS_KNOWN_ARTIFICER[idx] ?? 0;
+    default: return 0; // ranger, paladin: no cantrips in 5e
+  }
+}
+
 // 2014 5e full caster spell slots by character level [1st, 2nd, 3rd, ... 9th]. Index 0 = level 1.
 const SPELL_SLOTS_FULL = [
   [2], [3], [4,2], [4,3], [4,3,2], [4,3,3], [4,3,3,1], [4,3,3,2], [4,3,3,3,1], [4,3,3,3,2],
@@ -2602,7 +2628,13 @@ function renderSpellsTab() {
 
   const getAbilityMod = (ability) => abilityModifier(parseInt(getValue('ability-' + ability), 10) || 10);
   const limitInfo = getSpellLimit(classId, charLevel, getAbilityMod);
+  const cantripLimit = getCantripLimit(classId, charLevel);
   let currentCount = (state.spellsKnown || []).filter(Boolean).length;
+
+  // Build name -> spell level map (0 = cantrip) for known-spell lookups
+  const filteredForChar = getSpellsFilteredForCharacter();
+  const spellLevelByName = new Map();
+  filteredForChar.forEach(s => { spellLevelByName.set((s.name || '').trim(), s.level ?? 0); });
 
   if (limitInfo.limit === 0) {
     state.spellsKnown = [];
@@ -2612,11 +2644,27 @@ function renderSpellsTab() {
     currentCount = state.spellsKnown.length;
   }
 
+  // Enforce cantrip cap: only allow up to cantripLimit cantrips in known list
+  if (cantripLimit >= 0 && (state.spellsKnown || []).length > 0) {
+    const known = (state.spellsKnown || []).filter(Boolean);
+    const cantrips = known.filter(name => spellLevelByName.get((name || '').trim()) === 0);
+    const nonCantrips = known.filter(name => spellLevelByName.get((name || '').trim()) !== 0);
+    if (cantrips.length > cantripLimit) {
+      const keptCantrips = cantrips.slice(0, cantripLimit);
+      state.spellsKnown = [...nonCantrips, ...keptCantrips];
+      currentCount = state.spellsKnown.length;
+    }
+  }
+
+  const currentCantripCount = (state.spellsKnown || []).filter(Boolean).filter(name => spellLevelByName.get((name || '').trim()) === 0).length;
   const atOrOverLimit = limitInfo.limit > 0 && currentCount >= limitInfo.limit;
+  const atOrOverCantripLimit = cantripLimit > 0 && currentCantripCount >= cantripLimit;
 
   const limitEl = document.getElementById('spells-limit-display');
   if (limitEl) {
-    limitEl.textContent = limitInfo.label + ': ' + currentCount + ' / ' + limitInfo.limit;
+    let limitText = limitInfo.label + ': ' + currentCount + ' / ' + limitInfo.limit;
+    if (cantripLimit > 0) limitText += ' (Cantrips: ' + currentCantripCount + ' / ' + cantripLimit + ')';
+    limitEl.textContent = limitText;
     limitEl.classList.toggle('spells-limit-over', limitInfo.limit > 0 && currentCount > limitInfo.limit);
   }
 
@@ -2681,7 +2729,7 @@ function renderSpellsTab() {
   const knownList = document.getElementById('spells-known-list');
   const searchQ = (document.getElementById('spells-search')?.value || '').toLowerCase().trim();
 
-  let filtered = getSpellsFilteredForCharacter();
+  let filtered = filteredForChar;
   if (searchQ) filtered = filtered.filter(s => (s.name || '').toLowerCase().includes(searchQ));
   filtered.sort((a, b) => {
     if (a.level !== b.level) return (a.level ?? 0) - (b.level ?? 0);
@@ -2698,12 +2746,16 @@ function renderSpellsTab() {
       const row = document.createElement('div');
       row.className = 'spells-list-row';
       const nameEsc = escapeHtml(spell.name || '');
-      const addDisabled = atOrOverLimit ? ' disabled' : '';
-      const addDimmed = atOrOverLimit ? ' spell-add-btn--at-limit' : '';
-      const addTitle = atOrOverLimit ? ' title="At maximum ' + limitInfo.label.toLowerCase() + '"' : '';
+      const isCantrip = spell.level === 0;
+      const cannotAddCantrip = isCantrip && atOrOverCantripLimit;
+      const addDisabled = (atOrOverLimit || cannotAddCantrip) ? ' disabled' : '';
+      const addDimmed = (atOrOverLimit || cannotAddCantrip) ? ' spell-add-btn--at-limit' : '';
+      let addTitle = '';
+      if (atOrOverLimit) addTitle = ' title="At maximum ' + limitInfo.label.toLowerCase() + '"';
+      else if (cannotAddCantrip) addTitle = ' title="At maximum cantrips known (' + cantripLimit + ')"';
       row.innerHTML = '<span class="spell-level-tag">[' + levelStr + ']</span> <span class="spell-tooltip-trigger" data-spell-name="' + nameEsc + '">' + nameEsc + '</span> <button type="button" class="btn btn-ghost btn-sm spell-add-btn' + addDimmed + '" data-name="' + nameEsc + '"' + addDisabled + addTitle + '>Add</button>';
       const addBtn = row.querySelector('.spell-add-btn');
-      if (addBtn && !atOrOverLimit) {
+      if (addBtn && !atOrOverLimit && !cannotAddCantrip) {
         addBtn.addEventListener('click', () => {
           const name = (addBtn.dataset.name || '').trim();
           if (name && !state.spellsKnown.includes(name)) state.spellsKnown.push(name);
