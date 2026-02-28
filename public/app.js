@@ -2298,7 +2298,13 @@ async function saveCharacter() {
         statusEl.classList.add('error');
         return;
       }
-      throw new Error(await res.text());
+      const text = await res.text();
+      let msg = text;
+      try {
+        const j = JSON.parse(text);
+        if (j && typeof j.error === 'string') msg = j.error;
+      } catch (_) {}
+      throw new Error(msg);
     }
     const data = await res.json();
     state.characterId = data.id;
@@ -2339,6 +2345,13 @@ async function renderCharacterList() {
         listEl.innerHTML = '<li class="char-list-empty">No saved characters</li>';
       }
     } else {
+      const CHAR_LIMIT = 10;
+      if (list.length >= CHAR_LIMIT) {
+        const capLi = document.createElement('li');
+        capLi.className = 'char-list-empty char-list-cap-hint';
+        capLi.textContent = 'Character limit reached (' + list.length + '/' + CHAR_LIMIT + '). Delete one to create another.';
+        listEl.appendChild(capLi);
+      }
       list.forEach(c => {
         const li = document.createElement('li');
         li.className = 'char-list-item';
@@ -2382,7 +2395,12 @@ async function restoreFromBackup() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Restore failed');
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = 'Restore failed';
+        try { const j = JSON.parse(text); if (j && typeof j.error === 'string') msg = j.error; } catch (_) {}
+        throw new Error(msg);
+      }
       const data = await res.json();
       addCharacterToBackup(data);
     }

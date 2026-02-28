@@ -14,6 +14,7 @@ const DATA_FILE = path.join(DATA_DIR, 'characters.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MAX_CHARACTERS_PER_USER = 10;
 
 // Persist sessions on disk so logins survive server restarts/deploys (e.g. Railway).
 const sessionStore = new FileStore({
@@ -287,6 +288,10 @@ app.get('/api/characters/:id', requireAuth, (req, res) => {
 app.post('/api/characters', requireAuth, (req, res) => {
   try {
     const characters = readCharacters();
+    const mine = characters.filter(c => c.userId === req.session.userId);
+    if (mine.length >= MAX_CHARACTERS_PER_USER) {
+      return res.status(400).json({ error: 'Character limit reached. You can have up to ' + MAX_CHARACTERS_PER_USER + ' characters. Delete one to create another.' });
+    }
     const body = { ...getDefaultCharacter(), ...req.body };
     body.id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
     body.userId = req.session.userId;
