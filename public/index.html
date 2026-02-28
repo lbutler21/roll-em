@@ -57,13 +57,31 @@
         <form id="auth-form">
           <label>Username <input type="text" id="auth-username-input" autocomplete="username" required /></label>
           <label id="auth-email-row" class="hidden">Email <input type="email" id="auth-email-input" autocomplete="email" placeholder="you@example.com" /></label>
-          <label>Password <input type="password" id="auth-password-input" autocomplete="current-password" required /></label>
+          <label>Password
+            <span class="password-input-wrap">
+              <input type="password" id="auth-password-input" autocomplete="current-password" required />
+              <button type="button" class="password-toggle" id="auth-password-toggle" aria-label="Show password" title="Show password">
+                <span class="password-toggle-show" aria-hidden="true">Show</span>
+                <span class="password-toggle-hide hidden" aria-hidden="true">Hide</span>
+              </button>
+            </span>
+          </label>
           <div class="auth-form-actions">
             <button type="submit" id="auth-submit" class="btn btn-primary">Log in</button>
             <button type="button" id="auth-switch-mode" class="btn btn-ghost">Create an account</button>
             <button type="button" id="auth-cancel" class="btn btn-ghost">Cancel</button>
           </div>
         </form>
+      </div>
+    </div>
+    <div id="settings-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-content settings-modal-content">
+        <h3>Settings</h3>
+        <div class="settings-modal-actions">
+          <a href="profile.html" class="btn btn-primary">Profile</a>
+          <button type="button" id="settings-btn-logout" class="btn btn-ghost">Log out</button>
+        </div>
+        <button type="button" id="settings-close" class="btn btn-ghost">Close</button>
       </div>
     </div>
     <div id="main-app" class="hidden">
@@ -91,8 +109,7 @@
           </span>
           <span id="auth-user" class="auth-user hidden">
             <span id="auth-username"></span>
-            <a href="profile.html" class="btn btn-banner btn-profile-link no-print" title="View profile">Profile</a>
-            <button type="button" id="btn-logout" class="btn btn-banner">Log out</button>
+            <button type="button" id="btn-settings" class="btn btn-banner no-print" title="Settings">Settings</button>
           </span>
           <button type="button" id="btn-manage" class="btn btn-banner" title="Manage character">Manage</button>
           <div class="banner-theme-scene-wrap">

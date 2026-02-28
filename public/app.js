@@ -303,6 +303,14 @@ function openAuthModal(mode) {
     if (emailRow) emailRow.classList.add('hidden');
     if (emailInput) { emailInput.value = ''; emailInput.required = false; }
   }
+  const pwInput = document.getElementById('auth-password-input');
+  const toggleShow = document.querySelector('#auth-password-toggle .password-toggle-show');
+  const toggleHide = document.querySelector('#auth-password-toggle .password-toggle-hide');
+  if (pwInput) pwInput.type = 'password';
+  if (toggleShow) { toggleShow.classList.remove('hidden'); }
+  if (toggleHide) { toggleHide.classList.add('hidden'); }
+  const toggleBtn = document.getElementById('auth-password-toggle');
+  if (toggleBtn) toggleBtn.setAttribute('aria-label', 'Show password');
   document.getElementById('auth-modal').classList.remove('hidden');
 }
 
@@ -1827,7 +1835,22 @@ document.getElementById('btn-start-now')?.addEventListener('click', () => {
 });
 document.getElementById('landing-btn-login')?.addEventListener('click', () => openAuthModal('login'));
 document.getElementById('landing-btn-register')?.addEventListener('click', () => openAuthModal('register'));
-document.getElementById('btn-logout')?.addEventListener('click', async () => {
+document.getElementById('btn-settings')?.addEventListener('click', () => {
+  document.getElementById('settings-modal').classList.remove('hidden');
+  document.getElementById('settings-modal').setAttribute('aria-hidden', 'false');
+});
+document.getElementById('settings-close')?.addEventListener('click', () => {
+  document.getElementById('settings-modal').classList.add('hidden');
+  document.getElementById('settings-modal').setAttribute('aria-hidden', 'true');
+});
+document.getElementById('settings-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'settings-modal') {
+    e.target.classList.add('hidden');
+    e.target.setAttribute('aria-hidden', 'true');
+  }
+});
+document.getElementById('settings-btn-logout')?.addEventListener('click', async () => {
+  document.getElementById('settings-modal').classList.add('hidden');
   await fetch(API_BASE + '/api/auth/logout', { method: 'POST', ...API_CREDENTIALS });
   showSheetWithoutAuth = false;
   resetToBlankCharacter();
@@ -1865,6 +1888,27 @@ document.getElementById('auth-form')?.addEventListener('submit', async (e) => {
 document.getElementById('auth-switch-mode')?.addEventListener('click', () => openAuthModal(authModalMode === 'login' ? 'register' : 'login'));
 document.getElementById('auth-cancel')?.addEventListener('click', () => document.getElementById('auth-modal').classList.add('hidden'));
 document.getElementById('auth-modal')?.addEventListener('click', (e) => { if (e.target.id === 'auth-modal') e.target.classList.add('hidden'); });
+
+document.getElementById('auth-password-toggle')?.addEventListener('click', () => {
+  const input = document.getElementById('auth-password-input');
+  const showSpan = document.querySelector('#auth-password-toggle .password-toggle-show');
+  const hideSpan = document.querySelector('#auth-password-toggle .password-toggle-hide');
+  const btn = document.getElementById('auth-password-toggle');
+  if (!input || !btn) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (showSpan) showSpan.classList.add('hidden');
+    if (hideSpan) hideSpan.classList.remove('hidden');
+    btn.setAttribute('aria-label', 'Hide password');
+    btn.setAttribute('title', 'Hide password');
+  } else {
+    input.type = 'password';
+    if (showSpan) showSpan.classList.remove('hidden');
+    if (hideSpan) hideSpan.classList.add('hidden');
+    btn.setAttribute('aria-label', 'Show password');
+    btn.setAttribute('title', 'Show password');
+  }
+});
 
 document.getElementById('btn-delete-character')?.addEventListener('click', async () => {
   if (!state.characterId) return;
