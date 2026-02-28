@@ -166,6 +166,15 @@ async function checkAuth() {
   updateLandingAndAppVisibility();
 }
 
+function openCharacterFromUrlIfPresent() {
+  if (!authUser || isAdminView()) return;
+  const params = new URLSearchParams(location.search);
+  const id = params.get('character');
+  if (!id) return;
+  if (typeof loadCharacter === 'function') loadCharacter(id);
+  try { history.replaceState({}, '', location.pathname + location.hash); } catch (_) {}
+}
+
 function isAdminView() {
   return location.hash === '#admin' && authUser && authUser.id === 'admin';
 }
@@ -1738,7 +1747,10 @@ function toggleTheme() {
 }
 document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
 document.getElementById('landing-theme-toggle')?.addEventListener('click', toggleTheme);
-document.getElementById('btn-change-scene')?.addEventListener('click', openSceneModal);
+document.getElementById('btn-manage-change-scene')?.addEventListener('click', () => {
+  document.getElementById('manage-modal').classList.add('hidden');
+  openSceneModal();
+});
 document.getElementById('btn-close-scene')?.addEventListener('click', closeSceneModal);
 document.getElementById('scene-modal')?.addEventListener('click', (e) => { if (e.target.id === 'scene-modal') closeSceneModal(); });
 document.getElementById('scene-bg-file')?.addEventListener('change', (e) => {
@@ -3238,7 +3250,7 @@ document.getElementById('subrace')?.addEventListener('change', () => {
 });
 
 updateModifiers();
-checkAuth();
+checkAuth().then(openCharacterFromUrlIfPresent);
 
 function showBackdoorIfHash() {
   const overlay = document.getElementById('backdoor-overlay');

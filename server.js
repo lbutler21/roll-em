@@ -133,9 +133,33 @@ app.get('/api/auth/me', (req, res) => {
     if (req.session.userId === 'admin') return res.json({ id: 'admin', username: 'admin' });
     const users = readUsers();
     const user = users.find(u => u.id === req.session.userId);
-    if (user) return res.json({ id: user.id, username: user.username });
+    if (user) return res.json({ id: user.id, username: user.username, createdAt: user.createdAt });
   }
   res.json(null);
+});
+
+app.get('/api/profile', requireAuth, (req, res) => {
+  try {
+    ensureDataDir();
+    const users = readUsers();
+    const user = users.find(u => u.id === req.session.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found. Try logging in again from the character sheet.' });
+    }
+    let characters = [];
+    try {
+      characters = readCharacters();
+    } catch (e) {
+      // characters.json missing or invalid; treat as empty
+    }
+    const mine = characters.filter(c => c.userId === req.session.userId);
+    res.json({
+      user: { id: user.id, username: user.username, createdAt: user.createdAt },
+      characters: mine.map(c => ({ id: c.id, name: c.name, class: c.class, level: c.level, updatedAt: c.updatedAt }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
 });
 
 function isValidEmail(s) {

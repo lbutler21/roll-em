@@ -91,12 +91,12 @@
           </span>
           <span id="auth-user" class="auth-user hidden">
             <span id="auth-username"></span>
+            <a href="profile.html" class="btn btn-banner btn-profile-link no-print" title="View profile">Profile</a>
             <button type="button" id="btn-logout" class="btn btn-banner">Log out</button>
           </span>
           <button type="button" id="btn-manage" class="btn btn-banner" title="Manage character">Manage</button>
           <div class="banner-theme-scene-wrap">
             <button type="button" id="btn-theme-toggle" class="btn btn-banner btn-theme-toggle no-print" title="Switch to light mode" aria-label="Theme">☀</button>
-            <button type="button" id="btn-change-scene" class="btn btn-banner btn-change-scene no-print" title="Choose color scheme">Change Scene</button>
           </div>
         </div>
       </div>
@@ -612,6 +612,10 @@
             </div>
           </div>
           <input type="hidden" id="portrait" />
+        </div>
+        <div class="scene-choose">
+          <label class="scene-choose-label">Change Scene</label>
+          <button type="button" id="btn-manage-change-scene" class="btn btn-ghost" title="Choose color scheme">Choose color scheme…</button>
         </div>
         <div class="info-grid">
           <label>Character Name <input type="text" id="name" placeholder="—" /></label>
