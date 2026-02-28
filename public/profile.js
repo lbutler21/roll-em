@@ -67,7 +67,7 @@ function renderProfile(data) {
   document.getElementById('profile-created-value').textContent = formatDate(user.createdAt);
 }
 
-function renderCharactersGrid(characters) {
+async function renderCharactersGrid(characters) {
   const grid = document.getElementById('profile-characters-grid');
   const empty = document.getElementById('profile-characters-empty');
   if (!grid) return;
@@ -77,21 +77,50 @@ function renderCharactersGrid(characters) {
     return;
   }
   if (empty) empty.classList.add('hidden');
+  const missingPortrait = characters.map((c, i) => ({ c, i })).filter(({ c }) => !(c.portrait != null && String(c.portrait).trim().length > 0));
+  if (missingPortrait.length > 0) {
+    const filled = await Promise.all(missingPortrait.map(async ({ c, i }) => {
+      try {
+        const r = await fetch(API_BASE + '/api/characters/' + encodeURIComponent(c.id), API_CREDENTIALS);
+        if (!r.ok) return characters[i];
+        const full = await r.json();
+        if (full.portrait && String(full.portrait).trim().length > 0) return { ...c, portrait: full.portrait };
+      } catch (_) {}
+      return characters[i];
+    }));
+    missingPortrait.forEach(({ i }, j) => { characters[i] = filled[j]; });
+  }
+  function safeSrc(url) {
+    const s = String(url).trim();
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
   grid.innerHTML = characters.map(c => {
     const name = escapeHtml(c.name || 'Unnamed');
     const cls = escapeHtml(c.class || '—');
     const level = c.level != null ? c.level : 1;
-    const updated = formatDate(c.updatedAt);
     const openUrl = 'index.html?character=' + encodeURIComponent(c.id);
+    const portraitVal = c.portrait != null ? String(c.portrait).trim() : '';
+    const hasPortrait = portraitVal.length > 0;
+    const portraitHtml = hasPortrait
+      ? '<img class="profile-character-portrait-img" src="' + safeSrc(portraitVal) + '" alt="" data-fallback="no-portrait" />'
+      : '<div class="profile-character-portrait-placeholder">No portrait</div>';
     return (
       '<article class="profile-character-card">' +
+      '<a href="' + openUrl + '" class="profile-character-card-link">' +
+      '<div class="profile-character-portrait-wrap">' + portraitHtml + '</div>' +
       '<h3 class="profile-character-name">' + name + '</h3>' +
       '<p class="profile-character-meta">' + cls + ' · Level ' + level + '</p>' +
-      '<p class="profile-character-updated">Updated ' + updated + '</p>' +
+      '</a>' +
       '<a href="' + openUrl + '" class="btn btn-primary btn-sm profile-character-open">Open</a>' +
       '</article>'
     );
   }).join('');
+  grid.querySelectorAll('.profile-character-portrait-img[data-fallback="no-portrait"]').forEach(img => {
+    img.addEventListener('error', function () {
+      const wrap = this.closest('.profile-character-portrait-wrap');
+      if (wrap) wrap.innerHTML = '<div class="profile-character-portrait-placeholder">No portrait</div>';
+    });
+  });
 }
 
 function setupThemeToggle() {
@@ -182,7 +211,7 @@ async function init() {
   const data = await loadProfile();
   if (!data) return;
   renderProfile(data);
-  renderCharactersGrid(data.characters || []);
+  await renderCharactersGrid(data.characters || []);
 }
 
 init().catch(err => {

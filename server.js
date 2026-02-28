@@ -155,7 +155,7 @@ app.get('/api/profile', requireAuth, (req, res) => {
     const mine = characters.filter(c => c.userId === req.session.userId);
     res.json({
       user: { id: user.id, username: user.username, email: user.email || '', createdAt: user.createdAt },
-      characters: mine.map(c => ({ id: c.id, name: c.name, class: c.class, level: c.level, updatedAt: c.updatedAt }))
+      characters: mine.map(c => ({ id: c.id, name: c.name, class: c.class, level: c.level, updatedAt: c.updatedAt, portrait: c.portrait || '' }))
     });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Server error' });
@@ -309,7 +309,8 @@ app.get('/api/characters', requireAuth, (req, res) => {
       name: c.name || 'Unnamed',
       class: c.class,
       level: c.level,
-      updatedAt: c.updatedAt
+      updatedAt: c.updatedAt,
+      portrait: c.portrait || ''
     }));
     res.json(list);
   } catch (err) {
@@ -353,7 +354,9 @@ app.put('/api/characters/:id', requireAuth, (req, res) => {
     const characters = readCharacters();
     const idx = characters.findIndex(x => x.id === req.params.id && x.userId === req.session.userId);
     if (idx === -1) return res.status(404).json({ error: 'Character not found' });
-    const updated = { ...characters[idx], ...req.body, id: req.params.id, userId: req.session.userId, updatedAt: new Date().toISOString() };
+    const existing = characters[idx];
+    const updated = { ...existing, ...req.body, id: req.params.id, userId: req.session.userId, updatedAt: new Date().toISOString() };
+    if (updated.portrait === undefined || updated.portrait === null) updated.portrait = existing.portrait || '';
     characters[idx] = updated;
     writeCharacters(characters);
     res.json(updated);
