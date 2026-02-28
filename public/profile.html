@@ -32,9 +32,31 @@
         <h1 class="profile-section-title">Profile</h1>
         <div id="profile-data" class="profile-data">
           <p class="profile-field"><span class="profile-field-label">Username</span> <span id="profile-username-value"></span></p>
+          <p class="profile-field"><span class="profile-field-label">Email</span> <span id="profile-email-value"></span></p>
           <p class="profile-field"><span class="profile-field-label">Member since</span> <span id="profile-created-value"></span></p>
+          <p class="profile-field profile-field-password">
+            <span class="profile-field-label">Password</span>
+            <span id="profile-password-masked" class="profile-password-masked">••••••••</span>
+            <button type="button" id="profile-btn-change-password" class="btn btn-ghost btn-sm">Change password</button>
+          </p>
         </div>
       </section>
+
+      <div id="profile-change-password-modal" class="modal profile-modal hidden" aria-hidden="true">
+        <div class="modal-content profile-modal-content">
+          <h3>Change password</h3>
+          <p id="profile-password-error" class="profile-form-error hidden"></p>
+          <form id="profile-change-password-form">
+            <label>Current password <input type="password" id="profile-current-password" autocomplete="current-password" required /></label>
+            <label>New password <input type="password" id="profile-new-password" autocomplete="new-password" minlength="6" required /></label>
+            <label>Confirm new password <input type="password" id="profile-confirm-password" autocomplete="new-password" minlength="6" required /></label>
+            <div class="profile-form-actions">
+              <button type="submit" class="btn btn-primary">Update password</button>
+              <button type="button" id="profile-password-cancel" class="btn btn-ghost">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       <section class="profile-section">
         <h2 class="profile-section-title">My Characters</h2>

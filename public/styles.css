@@ -3623,3 +3623,47 @@ textarea {
 [data-theme="light"] .profile-character-updated {
   color: var(--ink-muted);
 }
+
+.profile-field-password {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-password-masked {
+  margin-right: 0.5rem;
+  letter-spacing: 0.15em;
+}
+
+.profile-modal .modal-content {
+  max-width: 380px;
+}
+
+.profile-modal-content label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.profile-modal-content input {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  margin-top: 0.25rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.profile-form-error {
+  color: var(--danger);
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

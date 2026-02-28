@@ -62,6 +62,8 @@ function renderProfile(data) {
   const user = data.user || {};
   document.getElementById('profile-username').textContent = user.username || '';
   document.getElementById('profile-username-value').textContent = escapeHtml(user.username || '—');
+  const emailEl = document.getElementById('profile-email-value');
+  if (emailEl) emailEl.textContent = user.email ? escapeHtml(user.email) : '—';
   document.getElementById('profile-created-value').textContent = formatDate(user.createdAt);
 }
 
@@ -108,9 +110,75 @@ function setupLogout() {
   });
 }
 
+function setupChangePassword() {
+  const modal = document.getElementById('profile-change-password-modal');
+  const btn = document.getElementById('profile-btn-change-password');
+  const cancelBtn = document.getElementById('profile-password-cancel');
+  const form = document.getElementById('profile-change-password-form');
+  const errEl = document.getElementById('profile-password-error');
+
+  function showError(msg) {
+    if (errEl) {
+      errEl.textContent = msg || '';
+      errEl.classList.toggle('hidden', !msg);
+    }
+  }
+
+  function closeModal() {
+    if (modal) modal.classList.add('hidden');
+    if (form) form.reset();
+    showError('');
+  }
+
+  btn?.addEventListener('click', () => {
+    if (modal) modal.classList.remove('hidden');
+    showError('');
+    document.getElementById('profile-current-password')?.focus();
+  });
+
+  cancelBtn?.addEventListener('click', closeModal);
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const current = document.getElementById('profile-current-password')?.value || '';
+    const newP = document.getElementById('profile-new-password')?.value || '';
+    const confirmP = document.getElementById('profile-confirm-password')?.value || '';
+    showError('');
+    if (newP.length < 6) {
+      showError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newP !== confirmP) {
+      showError('New password and confirmation do not match.');
+      return;
+    }
+    try {
+      const res = await fetch(API_BASE + '/api/profile/change-password', {
+        method: 'POST',
+        ...API_CREDENTIALS,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: current, newPassword: newP })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(data.error || 'Failed to update password.');
+        return;
+      }
+      closeModal();
+    } catch (err) {
+      showError('Network error. Try again.');
+    }
+  });
+}
+
 async function init() {
   setupThemeToggle();
   setupLogout();
+  setupChangePassword();
   const data = await loadProfile();
   if (!data) return;
   renderProfile(data);

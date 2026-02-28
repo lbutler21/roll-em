@@ -154,9 +154,28 @@ app.get('/api/profile', requireAuth, (req, res) => {
     }
     const mine = characters.filter(c => c.userId === req.session.userId);
     res.json({
-      user: { id: user.id, username: user.username, createdAt: user.createdAt },
+      user: { id: user.id, username: user.username, email: user.email || '', createdAt: user.createdAt },
       characters: mine.map(c => ({ id: c.id, name: c.name, class: c.class, level: c.level, updatedAt: c.updatedAt }))
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
+app.post('/api/profile/change-password', requireAuth, (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    const current = currentPassword == null ? '' : String(currentPassword);
+    const newP = newPassword == null ? '' : String(newPassword);
+    if (!current || !newP) return res.status(400).json({ error: 'Current password and new password are required' });
+    if (newP.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    const users = readUsers();
+    const user = users.find(u => u.id === req.session.userId);
+    if (!user || !user.passwordHash) return res.status(404).json({ error: 'User not found' });
+    if (!bcrypt.compareSync(current, user.passwordHash)) return res.status(401).json({ error: 'Current password is incorrect' });
+    user.passwordHash = bcrypt.hashSync(newP, 10);
+    writeUsers(users);
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Server error' });
   }
