@@ -3036,6 +3036,24 @@ textarea {
   margin: 0 0 1rem;
 }
 
+.builder-equipment-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.builder-equipment-textarea {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  padding: 0.5rem;
+  border: 1px solid var(--grey-border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
 .builder-option-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

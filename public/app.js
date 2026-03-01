@@ -2034,6 +2034,8 @@ function openBuilder() {
   document.querySelectorAll('.builder-option').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('input[name="abilityMethod"]').forEach(r => { r.checked = r.value === 'standard'; });
   ['str','dex','con','int','wis','cha'].forEach(ab => { document.getElementById('builder-' + ab).value = 10; });
+  const eqEl = document.getElementById('builder-equipment');
+  if (eqEl) eqEl.value = '';
   buildBuilderOptionGrids();
   goToBuilderStep(1);
   document.getElementById('builder-modal').classList.remove('hidden');
@@ -2123,6 +2125,14 @@ function selectBuilderOption(type, id) {
   if (type === 'class' && builderState.step === 4) applyStandardArrayByClass();
 }
 
+function populateBuilderEquipment() {
+  const classEq = builderState.classId && CLASS_STARTING_EQUIPMENT[builderState.classId];
+  const bgEq = builderState.backgroundId && BACKGROUND_BUILDER[builderState.backgroundId]?.equipment;
+  const parts = [classEq, bgEq].filter(Boolean);
+  const textarea = document.getElementById('builder-equipment');
+  if (textarea) textarea.value = parts.join('\n\n');
+}
+
 function goToBuilderStep(step) {
   builderState.step = step;
   document.querySelectorAll('.builder-step').forEach(el => el.classList.add('hidden'));
@@ -2131,13 +2141,14 @@ function goToBuilderStep(step) {
     el.classList.toggle('active', parseInt(el.dataset.step, 10) === step);
   });
   document.getElementById('btn-builder-back').style.display = step === 1 ? 'none' : '';
-  document.getElementById('btn-builder-next').style.display = step === 6 ? 'none' : '';
-  document.getElementById('btn-builder-complete').classList.toggle('hidden', step !== 6);
+  document.getElementById('btn-builder-next').style.display = step === 7 ? 'none' : '';
+  document.getElementById('btn-builder-complete').classList.toggle('hidden', step !== 7);
   if (step === 4) {
     updateBuilderAbilityUI();
     applyStandardArrayByClass();
   }
-  if (step === 6) renderBuilderSummary();
+  if (step === 6) populateBuilderEquipment();
+  if (step === 7) renderBuilderSummary();
 }
 
 function applyStandardArrayByClass() {
@@ -2239,7 +2250,9 @@ function completeBuilder() {
 
   const classEq = classData && CLASS_STARTING_EQUIPMENT[classId];
   const bgEq = bgData?.equipment || '';
-  setValue('equipment', [classEq, bgEq].filter(Boolean).join('\n\n'));
+  const equipmentTextarea = document.getElementById('builder-equipment');
+  const equipment = equipmentTextarea ? equipmentTextarea.value.trim() : [classEq, bgEq].filter(Boolean).join('\n\n');
+  setValue('equipment', equipment || [classEq, bgEq].filter(Boolean).join('\n\n'));
 
   if (classData) {
     setValue('hitDice', classData.hitDice || '1d8');
@@ -2287,7 +2300,7 @@ document.getElementById('btn-builder-back')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-builder-next')?.addEventListener('click', () => {
-  if (builderState.step < 6) goToBuilderStep(builderState.step + 1);
+  if (builderState.step < 7) goToBuilderStep(builderState.step + 1);
 });
 
 document.getElementById('btn-builder-complete')?.addEventListener('click', completeBuilder);
