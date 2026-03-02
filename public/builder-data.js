@@ -175,3 +175,14 @@ const CLASS_STARTING_EQUIPMENT = {
   warlock: '(a) light crossbow + 20 bolts or (b) any simple weapon\n(a) component pouch or (b) arcane focus\n(a) scholar\'s pack or (b) dungeoneer\'s pack\nLeather armor, any simple weapon, 2 daggers',
   wizard: '(a) quarterstaff or (b) dagger\n(a) component pouch or (b) arcane focus\n(a) scholar\'s pack or (b) explorer\'s pack\nSpellbook'
 };
+
+// Full contents of each equipment pack (expanded for character inventory)
+const PACK_CONTENTS = {
+  "burglar's pack": "Backpack\nBag of 1,000 ball bearings\n10 feet of string\nBell\n5 candles\nCrowbar\nHammer\n10 pitons\nHooded lantern\n2 flasks of oil\n5 days of rations\nTinderbox\nWaterskin\n50 feet of hempen rope",
+  "diplomat's pack": "Chest\n2 cases for maps and scrolls\nSet of fine clothes\nBottle of ink\nInk pen\nLamp\n2 flasks of oil\n5 sheets of paper\nVial of perfume\nSealing wax\nSoap",
+  "dungeoneer's pack": "Backpack\nCrowbar\nHammer\n10 pitons\n10 torches\nTinderbox\n10 days of rations\nWaterskin\n50 feet of hempen rope",
+  "entertainer's pack": "Backpack\nBedroll\n2 costumes\n5 candles\n5 days of rations\nWaterskin\nDisguise kit",
+  "explorer's pack": "Backpack\nBedroll\nMess kit\nTinderbox\n10 torches\n10 days of rations\nWaterskin\n50 feet of hempen rope",
+  "priest's pack": "Backpack\nBlanket\n10 candles\nTinderbox\nAlms box\n2 blocks of incense\nCenser\nVestments\n2 days of rations\nWaterskin",
+  "scholar's pack": "Backpack\nBook of lore\nBottle of ink\nInk pen\n10 sheets of parchment\nLittle bag of sand\nSmall knife"
+};

@@ -3054,6 +3054,59 @@ textarea {
   resize: vertical;
 }
 
+#builder-equipment-extra.builder-equipment-textarea {
+  min-height: 0;
+}
+
+.builder-equipment-list {
+  margin-bottom: 1rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.builder-equipment-choice {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--grey-border);
+}
+
+.builder-equipment-choice:last-child {
+  border-bottom: none;
+}
+
+.builder-equipment-choice-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin-bottom: 0.35rem;
+}
+
+.builder-equipment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.builder-equipment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.builder-equipment-option input[type="radio"] {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.builder-equipment-fixed {
+  font-size: 0.95rem;
+  padding: 0.35rem 0;
+  color: var(--ink);
+}
+
 .builder-option-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

@@ -2034,7 +2034,7 @@ function openBuilder() {
   document.querySelectorAll('.builder-option').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('input[name="abilityMethod"]').forEach(r => { r.checked = r.value === 'standard'; });
   ['str','dex','con','int','wis','cha'].forEach(ab => { document.getElementById('builder-' + ab).value = 10; });
-  const eqEl = document.getElementById('builder-equipment');
+  const eqEl = document.getElementById('builder-equipment-extra');
   if (eqEl) eqEl.value = '';
   buildBuilderOptionGrids();
   goToBuilderStep(1);
@@ -2125,12 +2125,72 @@ function selectBuilderOption(type, id) {
   if (type === 'class' && builderState.step === 4) applyStandardArrayByClass();
 }
 
+function parseEquipmentLines(rawText) {
+  const lines = rawText.split(/\n/).map(s => s.trim()).filter(Boolean);
+  const result = [];
+  const optionRegex = /^\(([abc])\)\s*(.+)$/;
+  for (const line of lines) {
+    const parts = line.split(/\s+or\s+/).map(s => s.trim());
+    const options = [];
+    for (const part of parts) {
+      const m = part.match(optionRegex);
+      if (m) options.push({ letter: m[1], text: m[2].trim() });
+      else break;
+    }
+    if (options.length >= 2) {
+      result.push({ type: 'choice', options });
+    } else {
+      result.push({ type: 'fixed', text: line });
+    }
+  }
+  return result;
+}
+
 function populateBuilderEquipment() {
   const classEq = builderState.classId && CLASS_STARTING_EQUIPMENT[builderState.classId];
   const bgEq = builderState.backgroundId && BACKGROUND_BUILDER[builderState.backgroundId]?.equipment;
   const parts = [classEq, bgEq].filter(Boolean);
-  const textarea = document.getElementById('builder-equipment');
-  if (textarea) textarea.value = parts.join('\n\n');
+  const rawText = parts.join('\n\n');
+  const listEl = document.getElementById('builder-equipment-list');
+  const extraEl = document.getElementById('builder-equipment-extra');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  if (extraEl) extraEl.value = '';
+
+  const parsed = parseEquipmentLines(rawText);
+  parsed.forEach((item, index) => {
+    if (item.type === 'choice') {
+      const group = document.createElement('div');
+      group.className = 'builder-equipment-choice';
+      const label = document.createElement('span');
+      label.className = 'builder-equipment-choice-label';
+      label.textContent = 'Choose one:';
+      group.appendChild(label);
+      const optsWrap = document.createElement('div');
+      optsWrap.className = 'builder-equipment-options';
+      const name = 'builder-eq-' + index;
+      item.options.forEach((opt, i) => {
+        const labelEl = document.createElement('label');
+        labelEl.className = 'builder-equipment-option';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = name;
+        radio.value = opt.text;
+        radio.dataset.letter = opt.letter;
+        if (i === 0) radio.checked = true;
+        labelEl.appendChild(radio);
+        labelEl.appendChild(document.createTextNode(' (' + opt.letter + ') ' + opt.text));
+        optsWrap.appendChild(labelEl);
+      });
+      group.appendChild(optsWrap);
+      listEl.appendChild(group);
+    } else {
+      const fixed = document.createElement('div');
+      fixed.className = 'builder-equipment-fixed';
+      fixed.textContent = item.text;
+      listEl.appendChild(fixed);
+    }
+  });
 }
 
 function goToBuilderStep(step) {
@@ -2149,6 +2209,48 @@ function goToBuilderStep(step) {
   }
   if (step === 6) populateBuilderEquipment();
   if (step === 7) renderBuilderSummary();
+}
+
+function expandPackIfAny(line) {
+  if (!line || typeof line !== 'string') return [];
+  const trimmed = line.trim();
+  const key = trimmed.toLowerCase();
+  const contents = typeof PACK_CONTENTS !== 'undefined' && PACK_CONTENTS[key];
+  if (contents) return contents.split('\n').map(s => s.trim()).filter(Boolean);
+  return [trimmed];
+}
+
+function expandPacksInLine(line) {
+  if (!line || typeof line !== 'string') return [];
+  const trimmed = line.trim();
+  const parts = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+  const result = [];
+  for (const part of parts) {
+    const key = part.toLowerCase();
+    const contents = typeof PACK_CONTENTS !== 'undefined' && PACK_CONTENTS[key];
+    if (contents) result.push(...contents.split('\n').map(s => s.trim()).filter(Boolean));
+    else result.push(part);
+  }
+  return result;
+}
+
+function getResolvedEquipmentString() {
+  const listEl = document.getElementById('builder-equipment-list');
+  const extraEl = document.getElementById('builder-equipment-extra');
+  const lines = [];
+  if (listEl) {
+    for (const child of listEl.children) {
+      if (child.classList.contains('builder-equipment-choice')) {
+        const checked = child.querySelector('input[type="radio"]:checked');
+        if (checked && checked.value) lines.push(...expandPackIfAny(checked.value));
+      } else if (child.classList.contains('builder-equipment-fixed')) {
+        const text = child.textContent.trim();
+        if (text) lines.push(...expandPacksInLine(text));
+      }
+    }
+  }
+  const extra = extraEl ? extraEl.value.trim().split(/\n/).map(s => s.trim()).filter(Boolean) : [];
+  return lines.concat(extra).join('\n');
 }
 
 function applyStandardArrayByClass() {
@@ -2250,9 +2352,8 @@ function completeBuilder() {
 
   const classEq = classData && CLASS_STARTING_EQUIPMENT[classId];
   const bgEq = bgData?.equipment || '';
-  const equipmentTextarea = document.getElementById('builder-equipment');
-  const equipment = equipmentTextarea ? equipmentTextarea.value.trim() : [classEq, bgEq].filter(Boolean).join('\n\n');
-  setValue('equipment', equipment || [classEq, bgEq].filter(Boolean).join('\n\n'));
+  const equipment = getResolvedEquipmentString() || [classEq, bgEq].filter(Boolean).join('\n\n');
+  setValue('equipment', equipment);
 
   if (classData) {
     setValue('hitDice', classData.hitDice || '1d8');
